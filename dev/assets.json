@@ -1,0 +1,2229 @@
+{
+  "months": [
+    {
+      "month": "2025-01",
+      "items": []
+    },
+    {
+      "month": "2025-02",
+      "items": [
+        {
+          "key": "mock-assets/2025/02/photo-01.jpg",
+          "size": 47919,
+          "modified": "2025-02-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-02-1/800/600"
+        },
+        {
+          "key": "mock-assets/2025/02/photo-02.jpg",
+          "size": 60926,
+          "modified": "2025-02-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-02-2/800/600"
+        },
+        {
+          "key": "mock-assets/2025/02/photo-03.jpg",
+          "size": 73933,
+          "modified": "2025-02-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-02-3/800/600"
+        },
+        {
+          "key": "mock-assets/2025/02/photo-04.jpg",
+          "size": 86940,
+          "modified": "2025-02-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-02-4/800/600"
+        },
+        {
+          "key": "mock-assets/2025/02/photo-05.jpg",
+          "size": 99947,
+          "modified": "2025-02-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-02-5/800/600"
+        },
+        {
+          "key": "mock-assets/2025/02/photo-06.jpg",
+          "size": 112954,
+          "modified": "2025-02-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-02-6/800/600"
+        },
+        {
+          "key": "mock-assets/2025/02/photo-07.jpg",
+          "size": 125961,
+          "modified": "2025-02-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-02-7/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2025-03",
+      "items": [
+        {
+          "key": "mock-assets/2025/03/photo-01.jpg",
+          "size": 55838,
+          "modified": "2025-03-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-1/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-02.jpg",
+          "size": 68845,
+          "modified": "2025-03-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-2/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-03.jpg",
+          "size": 81852,
+          "modified": "2025-03-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-3/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-04.jpg",
+          "size": 94859,
+          "modified": "2025-03-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-4/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-05.jpg",
+          "size": 107866,
+          "modified": "2025-03-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-5/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-06.jpg",
+          "size": 120873,
+          "modified": "2025-03-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-6/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-07.jpg",
+          "size": 133880,
+          "modified": "2025-03-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-7/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-08.jpg",
+          "size": 146887,
+          "modified": "2025-03-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-8/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-09.jpg",
+          "size": 159894,
+          "modified": "2025-03-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-9/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-10.jpg",
+          "size": 172901,
+          "modified": "2025-03-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-10/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-11.jpg",
+          "size": 185908,
+          "modified": "2025-03-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-11/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-12.jpg",
+          "size": 198915,
+          "modified": "2025-03-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-12/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-13.jpg",
+          "size": 211922,
+          "modified": "2025-03-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-13/800/600"
+        },
+        {
+          "key": "mock-assets/2025/03/photo-14.jpg",
+          "size": 224929,
+          "modified": "2025-03-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-03-14/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2025-04",
+      "items": [
+        {
+          "key": "mock-assets/2025/04/photo-01.jpg",
+          "size": 63757,
+          "modified": "2025-04-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-1/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-02.jpg",
+          "size": 76764,
+          "modified": "2025-04-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-2/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-03.jpg",
+          "size": 89771,
+          "modified": "2025-04-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-3/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-04.jpg",
+          "size": 102778,
+          "modified": "2025-04-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-4/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-05.jpg",
+          "size": 115785,
+          "modified": "2025-04-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-5/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-06.jpg",
+          "size": 128792,
+          "modified": "2025-04-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-6/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-07.jpg",
+          "size": 141799,
+          "modified": "2025-04-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-7/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-08.jpg",
+          "size": 154806,
+          "modified": "2025-04-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-8/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-09.jpg",
+          "size": 167813,
+          "modified": "2025-04-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-9/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-10.jpg",
+          "size": 180820,
+          "modified": "2025-04-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-10/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-11.jpg",
+          "size": 193827,
+          "modified": "2025-04-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-11/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-12.jpg",
+          "size": 206834,
+          "modified": "2025-04-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-12/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-13.jpg",
+          "size": 219841,
+          "modified": "2025-04-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-13/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-14.jpg",
+          "size": 232848,
+          "modified": "2025-04-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-14/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-15.jpg",
+          "size": 245855,
+          "modified": "2025-04-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-15/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-16.jpg",
+          "size": 258862,
+          "modified": "2025-04-16T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-16/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-17.jpg",
+          "size": 271869,
+          "modified": "2025-04-17T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-17/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-18.jpg",
+          "size": 284876,
+          "modified": "2025-04-18T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-18/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-19.jpg",
+          "size": 297883,
+          "modified": "2025-04-19T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-19/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-20.jpg",
+          "size": 310890,
+          "modified": "2025-04-20T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-20/800/600"
+        },
+        {
+          "key": "mock-assets/2025/04/photo-21.jpg",
+          "size": 323897,
+          "modified": "2025-04-21T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-04-21/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2025-05",
+      "items": [
+        {
+          "key": "mock-assets/2025/05/photo-01.jpg",
+          "size": 71676,
+          "modified": "2025-05-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-1/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-02.jpg",
+          "size": 84683,
+          "modified": "2025-05-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-2/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-03.jpg",
+          "size": 97690,
+          "modified": "2025-05-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-3/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-04.jpg",
+          "size": 110697,
+          "modified": "2025-05-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-4/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-05.jpg",
+          "size": 123704,
+          "modified": "2025-05-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-5/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-06.jpg",
+          "size": 136711,
+          "modified": "2025-05-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-6/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-07.jpg",
+          "size": 149718,
+          "modified": "2025-05-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-7/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-08.jpg",
+          "size": 162725,
+          "modified": "2025-05-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-8/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-09.jpg",
+          "size": 175732,
+          "modified": "2025-05-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-9/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-10.jpg",
+          "size": 188739,
+          "modified": "2025-05-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-10/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-11.jpg",
+          "size": 201746,
+          "modified": "2025-05-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-11/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-12.jpg",
+          "size": 214753,
+          "modified": "2025-05-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-12/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-13.jpg",
+          "size": 227760,
+          "modified": "2025-05-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-13/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-14.jpg",
+          "size": 240767,
+          "modified": "2025-05-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-14/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-15.jpg",
+          "size": 253774,
+          "modified": "2025-05-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-15/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-16.jpg",
+          "size": 266781,
+          "modified": "2025-05-16T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-16/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-17.jpg",
+          "size": 279788,
+          "modified": "2025-05-17T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-17/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-18.jpg",
+          "size": 292795,
+          "modified": "2025-05-18T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-18/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-19.jpg",
+          "size": 305802,
+          "modified": "2025-05-19T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-19/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-20.jpg",
+          "size": 318809,
+          "modified": "2025-05-20T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-20/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-21.jpg",
+          "size": 331816,
+          "modified": "2025-05-21T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-21/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-22.jpg",
+          "size": 344823,
+          "modified": "2025-05-22T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-22/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-23.jpg",
+          "size": 357830,
+          "modified": "2025-05-23T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-23/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-24.jpg",
+          "size": 370837,
+          "modified": "2025-05-24T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-24/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-25.jpg",
+          "size": 383844,
+          "modified": "2025-05-25T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-25/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-26.jpg",
+          "size": 396851,
+          "modified": "2025-05-26T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-26/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-27.jpg",
+          "size": 409858,
+          "modified": "2025-05-27T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-27/800/600"
+        },
+        {
+          "key": "mock-assets/2025/05/photo-28.jpg",
+          "size": 422865,
+          "modified": "2025-05-28T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-05-28/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2025-06",
+      "items": [
+        {
+          "key": "mock-assets/2025/06/photo-01.jpg",
+          "size": 79595,
+          "modified": "2025-06-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-06-1/800/600"
+        },
+        {
+          "key": "mock-assets/2025/06/photo-02.jpg",
+          "size": 92602,
+          "modified": "2025-06-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-06-2/800/600"
+        },
+        {
+          "key": "mock-assets/2025/06/photo-03.jpg",
+          "size": 105609,
+          "modified": "2025-06-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-06-3/800/600"
+        },
+        {
+          "key": "mock-assets/2025/06/photo-04.jpg",
+          "size": 118616,
+          "modified": "2025-06-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-06-4/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2025-07",
+      "items": [
+        {
+          "key": "mock-assets/2025/07/photo-01.jpg",
+          "size": 87514,
+          "modified": "2025-07-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-07-1/800/600"
+        },
+        {
+          "key": "mock-assets/2025/07/photo-02.jpg",
+          "size": 100521,
+          "modified": "2025-07-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-07-2/800/600"
+        },
+        {
+          "key": "mock-assets/2025/07/photo-03.jpg",
+          "size": 113528,
+          "modified": "2025-07-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-07-3/800/600"
+        },
+        {
+          "key": "mock-assets/2025/07/photo-04.jpg",
+          "size": 126535,
+          "modified": "2025-07-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-07-4/800/600"
+        },
+        {
+          "key": "mock-assets/2025/07/photo-05.jpg",
+          "size": 139542,
+          "modified": "2025-07-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-07-5/800/600"
+        },
+        {
+          "key": "mock-assets/2025/07/photo-06.jpg",
+          "size": 152549,
+          "modified": "2025-07-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-07-6/800/600"
+        },
+        {
+          "key": "mock-assets/2025/07/photo-07.jpg",
+          "size": 165556,
+          "modified": "2025-07-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-07-7/800/600"
+        },
+        {
+          "key": "mock-assets/2025/07/photo-08.jpg",
+          "size": 178563,
+          "modified": "2025-07-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-07-8/800/600"
+        },
+        {
+          "key": "mock-assets/2025/07/photo-09.jpg",
+          "size": 191570,
+          "modified": "2025-07-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-07-9/800/600"
+        },
+        {
+          "key": "mock-assets/2025/07/photo-10.jpg",
+          "size": 204577,
+          "modified": "2025-07-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-07-10/800/600"
+        },
+        {
+          "key": "mock-assets/2025/07/photo-11.jpg",
+          "size": 217584,
+          "modified": "2025-07-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-07-11/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2025-08",
+      "items": [
+        {
+          "key": "mock-assets/2025/08/photo-01.jpg",
+          "size": 95433,
+          "modified": "2025-08-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-1/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-02.jpg",
+          "size": 108440,
+          "modified": "2025-08-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-2/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-03.jpg",
+          "size": 121447,
+          "modified": "2025-08-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-3/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-04.jpg",
+          "size": 134454,
+          "modified": "2025-08-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-4/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-05.jpg",
+          "size": 147461,
+          "modified": "2025-08-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-5/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-06.jpg",
+          "size": 160468,
+          "modified": "2025-08-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-6/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-07.jpg",
+          "size": 173475,
+          "modified": "2025-08-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-7/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-08.jpg",
+          "size": 186482,
+          "modified": "2025-08-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-8/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-09.jpg",
+          "size": 199489,
+          "modified": "2025-08-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-9/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-10.jpg",
+          "size": 212496,
+          "modified": "2025-08-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-10/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-11.jpg",
+          "size": 225503,
+          "modified": "2025-08-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-11/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-12.jpg",
+          "size": 238510,
+          "modified": "2025-08-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-12/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-13.jpg",
+          "size": 251517,
+          "modified": "2025-08-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-13/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-14.jpg",
+          "size": 264524,
+          "modified": "2025-08-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-14/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-15.jpg",
+          "size": 277531,
+          "modified": "2025-08-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-15/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-16.jpg",
+          "size": 290538,
+          "modified": "2025-08-16T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-16/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-17.jpg",
+          "size": 303545,
+          "modified": "2025-08-17T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-17/800/600"
+        },
+        {
+          "key": "mock-assets/2025/08/photo-18.jpg",
+          "size": 316552,
+          "modified": "2025-08-18T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-08-18/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2025-09",
+      "items": [
+        {
+          "key": "mock-assets/2025/09/photo-01.jpg",
+          "size": 103352,
+          "modified": "2025-09-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-1/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-02.jpg",
+          "size": 116359,
+          "modified": "2025-09-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-2/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-03.jpg",
+          "size": 129366,
+          "modified": "2025-09-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-3/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-04.jpg",
+          "size": 142373,
+          "modified": "2025-09-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-4/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-05.jpg",
+          "size": 155380,
+          "modified": "2025-09-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-5/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-06.jpg",
+          "size": 168387,
+          "modified": "2025-09-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-6/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-07.jpg",
+          "size": 181394,
+          "modified": "2025-09-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-7/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-08.jpg",
+          "size": 194401,
+          "modified": "2025-09-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-8/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-09.jpg",
+          "size": 207408,
+          "modified": "2025-09-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-9/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-10.jpg",
+          "size": 220415,
+          "modified": "2025-09-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-10/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-11.jpg",
+          "size": 233422,
+          "modified": "2025-09-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-11/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-12.jpg",
+          "size": 246429,
+          "modified": "2025-09-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-12/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-13.jpg",
+          "size": 259436,
+          "modified": "2025-09-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-13/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-14.jpg",
+          "size": 272443,
+          "modified": "2025-09-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-14/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-15.jpg",
+          "size": 285450,
+          "modified": "2025-09-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-15/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-16.jpg",
+          "size": 298457,
+          "modified": "2025-09-16T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-16/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-17.jpg",
+          "size": 311464,
+          "modified": "2025-09-17T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-17/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-18.jpg",
+          "size": 324471,
+          "modified": "2025-09-18T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-18/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-19.jpg",
+          "size": 337478,
+          "modified": "2025-09-19T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-19/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-20.jpg",
+          "size": 350485,
+          "modified": "2025-09-20T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-20/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-21.jpg",
+          "size": 363492,
+          "modified": "2025-09-21T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-21/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-22.jpg",
+          "size": 376499,
+          "modified": "2025-09-22T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-22/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-23.jpg",
+          "size": 389506,
+          "modified": "2025-09-23T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-23/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-24.jpg",
+          "size": 402513,
+          "modified": "2025-09-24T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-24/800/600"
+        },
+        {
+          "key": "mock-assets/2025/09/photo-25.jpg",
+          "size": 415520,
+          "modified": "2025-09-25T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-09-25/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2025-10",
+      "items": [
+        {
+          "key": "mock-assets/2025/10/photo-01.jpg",
+          "size": 111271,
+          "modified": "2025-10-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-10-1/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2025-11",
+      "items": [
+        {
+          "key": "mock-assets/2025/11/photo-01.jpg",
+          "size": 119190,
+          "modified": "2025-11-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-11-1/800/600"
+        },
+        {
+          "key": "mock-assets/2025/11/photo-02.jpg",
+          "size": 132197,
+          "modified": "2025-11-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-11-2/800/600"
+        },
+        {
+          "key": "mock-assets/2025/11/photo-03.jpg",
+          "size": 145204,
+          "modified": "2025-11-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-11-3/800/600"
+        },
+        {
+          "key": "mock-assets/2025/11/photo-04.jpg",
+          "size": 158211,
+          "modified": "2025-11-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-11-4/800/600"
+        },
+        {
+          "key": "mock-assets/2025/11/photo-05.jpg",
+          "size": 171218,
+          "modified": "2025-11-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-11-5/800/600"
+        },
+        {
+          "key": "mock-assets/2025/11/photo-06.jpg",
+          "size": 184225,
+          "modified": "2025-11-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-11-6/800/600"
+        },
+        {
+          "key": "mock-assets/2025/11/photo-07.jpg",
+          "size": 197232,
+          "modified": "2025-11-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-11-7/800/600"
+        },
+        {
+          "key": "mock-assets/2025/11/photo-08.jpg",
+          "size": 210239,
+          "modified": "2025-11-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-11-8/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2025-12",
+      "items": [
+        {
+          "key": "mock-assets/2025/12/photo-01.jpg",
+          "size": 127109,
+          "modified": "2025-12-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-1/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-02.jpg",
+          "size": 140116,
+          "modified": "2025-12-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-2/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-03.jpg",
+          "size": 153123,
+          "modified": "2025-12-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-3/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-04.jpg",
+          "size": 166130,
+          "modified": "2025-12-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-4/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-05.jpg",
+          "size": 179137,
+          "modified": "2025-12-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-5/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-06.jpg",
+          "size": 192144,
+          "modified": "2025-12-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-6/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-07.jpg",
+          "size": 205151,
+          "modified": "2025-12-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-7/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-08.jpg",
+          "size": 218158,
+          "modified": "2025-12-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-8/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-09.jpg",
+          "size": 231165,
+          "modified": "2025-12-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-9/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-10.jpg",
+          "size": 244172,
+          "modified": "2025-12-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-10/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-11.jpg",
+          "size": 257179,
+          "modified": "2025-12-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-11/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-12.jpg",
+          "size": 270186,
+          "modified": "2025-12-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-12/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-13.jpg",
+          "size": 283193,
+          "modified": "2025-12-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-13/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-14.jpg",
+          "size": 296200,
+          "modified": "2025-12-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-14/800/600"
+        },
+        {
+          "key": "mock-assets/2025/12/photo-15.jpg",
+          "size": 309207,
+          "modified": "2025-12-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2025-12-15/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-01",
+      "items": [
+        {
+          "key": "mock-assets/2026/01/photo-01.jpg",
+          "size": 135028,
+          "modified": "2026-01-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-02.jpg",
+          "size": 148035,
+          "modified": "2026-01-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-2/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-03.jpg",
+          "size": 161042,
+          "modified": "2026-01-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-3/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-04.jpg",
+          "size": 174049,
+          "modified": "2026-01-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-4/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-05.jpg",
+          "size": 187056,
+          "modified": "2026-01-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-5/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-06.jpg",
+          "size": 200063,
+          "modified": "2026-01-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-6/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-07.jpg",
+          "size": 213070,
+          "modified": "2026-01-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-7/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-08.jpg",
+          "size": 226077,
+          "modified": "2026-01-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-8/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-09.jpg",
+          "size": 239084,
+          "modified": "2026-01-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-9/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-10.jpg",
+          "size": 252091,
+          "modified": "2026-01-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-10/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-11.jpg",
+          "size": 265098,
+          "modified": "2026-01-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-11/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-12.jpg",
+          "size": 278105,
+          "modified": "2026-01-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-12/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-13.jpg",
+          "size": 291112,
+          "modified": "2026-01-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-13/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-14.jpg",
+          "size": 304119,
+          "modified": "2026-01-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-14/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-15.jpg",
+          "size": 317126,
+          "modified": "2026-01-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-15/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-16.jpg",
+          "size": 330133,
+          "modified": "2026-01-16T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-16/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-17.jpg",
+          "size": 343140,
+          "modified": "2026-01-17T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-17/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-18.jpg",
+          "size": 356147,
+          "modified": "2026-01-18T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-18/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-19.jpg",
+          "size": 369154,
+          "modified": "2026-01-19T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-19/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-20.jpg",
+          "size": 382161,
+          "modified": "2026-01-20T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-20/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-21.jpg",
+          "size": 395168,
+          "modified": "2026-01-21T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-21/800/600"
+        },
+        {
+          "key": "mock-assets/2026/01/photo-22.jpg",
+          "size": 408175,
+          "modified": "2026-01-22T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-01-22/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-02",
+      "items": [
+        {
+          "key": "mock-assets/2026/02/photo-01.jpg",
+          "size": 142947,
+          "modified": "2026-02-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-02.jpg",
+          "size": 155954,
+          "modified": "2026-02-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-2/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-03.jpg",
+          "size": 168961,
+          "modified": "2026-02-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-3/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-04.jpg",
+          "size": 181968,
+          "modified": "2026-02-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-4/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-05.jpg",
+          "size": 194975,
+          "modified": "2026-02-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-5/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-06.jpg",
+          "size": 207982,
+          "modified": "2026-02-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-6/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-07.jpg",
+          "size": 220989,
+          "modified": "2026-02-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-7/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-08.jpg",
+          "size": 233996,
+          "modified": "2026-02-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-8/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-09.jpg",
+          "size": 247003,
+          "modified": "2026-02-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-9/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-10.jpg",
+          "size": 260010,
+          "modified": "2026-02-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-10/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-11.jpg",
+          "size": 273017,
+          "modified": "2026-02-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-11/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-12.jpg",
+          "size": 286024,
+          "modified": "2026-02-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-12/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-13.jpg",
+          "size": 299031,
+          "modified": "2026-02-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-13/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-14.jpg",
+          "size": 312038,
+          "modified": "2026-02-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-14/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-15.jpg",
+          "size": 325045,
+          "modified": "2026-02-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-15/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-16.jpg",
+          "size": 338052,
+          "modified": "2026-02-16T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-16/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-17.jpg",
+          "size": 351059,
+          "modified": "2026-02-17T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-17/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-18.jpg",
+          "size": 364066,
+          "modified": "2026-02-18T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-18/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-19.jpg",
+          "size": 377073,
+          "modified": "2026-02-19T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-19/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-20.jpg",
+          "size": 390080,
+          "modified": "2026-02-20T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-20/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-21.jpg",
+          "size": 403087,
+          "modified": "2026-02-21T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-21/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-22.jpg",
+          "size": 416094,
+          "modified": "2026-02-22T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-22/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-23.jpg",
+          "size": 429101,
+          "modified": "2026-02-23T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-23/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-24.jpg",
+          "size": 442108,
+          "modified": "2026-02-24T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-24/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-25.jpg",
+          "size": 455115,
+          "modified": "2026-02-25T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-25/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-26.jpg",
+          "size": 468122,
+          "modified": "2026-02-26T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-26/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-27.jpg",
+          "size": 481129,
+          "modified": "2026-02-27T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-27/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-28.jpg",
+          "size": 494136,
+          "modified": "2026-02-28T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-28/800/600"
+        },
+        {
+          "key": "mock-assets/2026/02/photo-29.jpg",
+          "size": 507143,
+          "modified": "2026-02-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-02-29/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-03",
+      "items": [
+        {
+          "key": "mock-assets/2026/03/photo-01.jpg",
+          "size": 150866,
+          "modified": "2026-03-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-03-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/03/photo-02.jpg",
+          "size": 163873,
+          "modified": "2026-03-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-03-2/800/600"
+        },
+        {
+          "key": "mock-assets/2026/03/photo-03.jpg",
+          "size": 176880,
+          "modified": "2026-03-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-03-3/800/600"
+        },
+        {
+          "key": "mock-assets/2026/03/photo-04.jpg",
+          "size": 189887,
+          "modified": "2026-03-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-03-4/800/600"
+        },
+        {
+          "key": "mock-assets/2026/03/photo-05.jpg",
+          "size": 202894,
+          "modified": "2026-03-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-03-5/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-04",
+      "items": [
+        {
+          "key": "mock-assets/2026/04/photo-01.jpg",
+          "size": 158785,
+          "modified": "2026-04-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/04/photo-02.jpg",
+          "size": 171792,
+          "modified": "2026-04-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-2/800/600"
+        },
+        {
+          "key": "mock-assets/2026/04/photo-03.jpg",
+          "size": 184799,
+          "modified": "2026-04-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-3/800/600"
+        },
+        {
+          "key": "mock-assets/2026/04/photo-04.jpg",
+          "size": 197806,
+          "modified": "2026-04-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-4/800/600"
+        },
+        {
+          "key": "mock-assets/2026/04/photo-05.jpg",
+          "size": 210813,
+          "modified": "2026-04-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-5/800/600"
+        },
+        {
+          "key": "mock-assets/2026/04/photo-06.jpg",
+          "size": 223820,
+          "modified": "2026-04-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-6/800/600"
+        },
+        {
+          "key": "mock-assets/2026/04/photo-07.jpg",
+          "size": 236827,
+          "modified": "2026-04-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-7/800/600"
+        },
+        {
+          "key": "mock-assets/2026/04/photo-08.jpg",
+          "size": 249834,
+          "modified": "2026-04-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-8/800/600"
+        },
+        {
+          "key": "mock-assets/2026/04/photo-09.jpg",
+          "size": 262841,
+          "modified": "2026-04-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-9/800/600"
+        },
+        {
+          "key": "mock-assets/2026/04/photo-10.jpg",
+          "size": 275848,
+          "modified": "2026-04-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-10/800/600"
+        },
+        {
+          "key": "mock-assets/2026/04/photo-11.jpg",
+          "size": 288855,
+          "modified": "2026-04-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-11/800/600"
+        },
+        {
+          "key": "mock-assets/2026/04/photo-12.jpg",
+          "size": 301862,
+          "modified": "2026-04-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-04-12/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-05",
+      "items": [
+        {
+          "key": "mock-assets/2026/05/photo-01.jpg",
+          "size": 166704,
+          "modified": "2026-05-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-02.jpg",
+          "size": 179711,
+          "modified": "2026-05-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-2/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-03.jpg",
+          "size": 192718,
+          "modified": "2026-05-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-3/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-04.jpg",
+          "size": 205725,
+          "modified": "2026-05-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-4/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-05.jpg",
+          "size": 218732,
+          "modified": "2026-05-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-5/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-06.jpg",
+          "size": 231739,
+          "modified": "2026-05-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-6/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-07.jpg",
+          "size": 244746,
+          "modified": "2026-05-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-7/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-08.jpg",
+          "size": 257753,
+          "modified": "2026-05-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-8/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-09.jpg",
+          "size": 270760,
+          "modified": "2026-05-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-9/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-10.jpg",
+          "size": 283767,
+          "modified": "2026-05-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-10/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-11.jpg",
+          "size": 296774,
+          "modified": "2026-05-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-11/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-12.jpg",
+          "size": 309781,
+          "modified": "2026-05-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-12/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-13.jpg",
+          "size": 322788,
+          "modified": "2026-05-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-13/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-14.jpg",
+          "size": 335795,
+          "modified": "2026-05-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-14/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-15.jpg",
+          "size": 348802,
+          "modified": "2026-05-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-15/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-16.jpg",
+          "size": 361809,
+          "modified": "2026-05-16T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-16/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-17.jpg",
+          "size": 374816,
+          "modified": "2026-05-17T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-17/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-18.jpg",
+          "size": 387823,
+          "modified": "2026-05-18T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-18/800/600"
+        },
+        {
+          "key": "mock-assets/2026/05/photo-19.jpg",
+          "size": 400830,
+          "modified": "2026-05-19T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-05-19/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-06",
+      "items": [
+        {
+          "key": "mock-assets/2026/06/photo-01.jpg",
+          "size": 174623,
+          "modified": "2026-06-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-02.jpg",
+          "size": 187630,
+          "modified": "2026-06-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-2/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-03.jpg",
+          "size": 200637,
+          "modified": "2026-06-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-3/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-04.jpg",
+          "size": 213644,
+          "modified": "2026-06-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-4/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-05.jpg",
+          "size": 226651,
+          "modified": "2026-06-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-5/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-06.jpg",
+          "size": 239658,
+          "modified": "2026-06-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-6/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-07.jpg",
+          "size": 252665,
+          "modified": "2026-06-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-7/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-08.jpg",
+          "size": 265672,
+          "modified": "2026-06-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-8/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-09.jpg",
+          "size": 278679,
+          "modified": "2026-06-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-9/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-10.jpg",
+          "size": 291686,
+          "modified": "2026-06-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-10/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-11.jpg",
+          "size": 304693,
+          "modified": "2026-06-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-11/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-12.jpg",
+          "size": 317700,
+          "modified": "2026-06-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-12/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-13.jpg",
+          "size": 330707,
+          "modified": "2026-06-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-13/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-14.jpg",
+          "size": 343714,
+          "modified": "2026-06-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-14/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-15.jpg",
+          "size": 356721,
+          "modified": "2026-06-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-15/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-16.jpg",
+          "size": 369728,
+          "modified": "2026-06-16T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-16/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-17.jpg",
+          "size": 382735,
+          "modified": "2026-06-17T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-17/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-18.jpg",
+          "size": 395742,
+          "modified": "2026-06-18T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-18/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-19.jpg",
+          "size": 408749,
+          "modified": "2026-06-19T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-19/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-20.jpg",
+          "size": 421756,
+          "modified": "2026-06-20T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-20/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-21.jpg",
+          "size": 434763,
+          "modified": "2026-06-21T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-21/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-22.jpg",
+          "size": 447770,
+          "modified": "2026-06-22T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-22/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-23.jpg",
+          "size": 460777,
+          "modified": "2026-06-23T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-23/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-24.jpg",
+          "size": 473784,
+          "modified": "2026-06-24T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-24/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-25.jpg",
+          "size": 486791,
+          "modified": "2026-06-25T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-25/800/600"
+        },
+        {
+          "key": "mock-assets/2026/06/photo-26.jpg",
+          "size": 499798,
+          "modified": "2026-06-26T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-06-26/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-07",
+      "items": [
+        {
+          "key": "mock-assets/2026/07/photo-01.jpg",
+          "size": 182542,
+          "modified": "2026-07-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-07-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/07/photo-02.jpg",
+          "size": 195549,
+          "modified": "2026-07-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-07-2/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-08",
+      "items": [
+        {
+          "key": "mock-assets/2026/08/photo-01.jpg",
+          "size": 190461,
+          "modified": "2026-08-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-08-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/08/photo-02.jpg",
+          "size": 203468,
+          "modified": "2026-08-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-08-2/800/600"
+        },
+        {
+          "key": "mock-assets/2026/08/photo-03.jpg",
+          "size": 216475,
+          "modified": "2026-08-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-08-3/800/600"
+        },
+        {
+          "key": "mock-assets/2026/08/photo-04.jpg",
+          "size": 229482,
+          "modified": "2026-08-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-08-4/800/600"
+        },
+        {
+          "key": "mock-assets/2026/08/photo-05.jpg",
+          "size": 242489,
+          "modified": "2026-08-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-08-5/800/600"
+        },
+        {
+          "key": "mock-assets/2026/08/photo-06.jpg",
+          "size": 255496,
+          "modified": "2026-08-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-08-6/800/600"
+        },
+        {
+          "key": "mock-assets/2026/08/photo-07.jpg",
+          "size": 268503,
+          "modified": "2026-08-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-08-7/800/600"
+        },
+        {
+          "key": "mock-assets/2026/08/photo-08.jpg",
+          "size": 281510,
+          "modified": "2026-08-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-08-8/800/600"
+        },
+        {
+          "key": "mock-assets/2026/08/photo-09.jpg",
+          "size": 294517,
+          "modified": "2026-08-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-08-9/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-09",
+      "items": [
+        {
+          "key": "mock-assets/2026/09/photo-01.jpg",
+          "size": 198380,
+          "modified": "2026-09-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-02.jpg",
+          "size": 211387,
+          "modified": "2026-09-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-2/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-03.jpg",
+          "size": 224394,
+          "modified": "2026-09-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-3/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-04.jpg",
+          "size": 237401,
+          "modified": "2026-09-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-4/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-05.jpg",
+          "size": 250408,
+          "modified": "2026-09-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-5/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-06.jpg",
+          "size": 263415,
+          "modified": "2026-09-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-6/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-07.jpg",
+          "size": 276422,
+          "modified": "2026-09-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-7/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-08.jpg",
+          "size": 289429,
+          "modified": "2026-09-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-8/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-09.jpg",
+          "size": 302436,
+          "modified": "2026-09-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-9/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-10.jpg",
+          "size": 315443,
+          "modified": "2026-09-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-10/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-11.jpg",
+          "size": 328450,
+          "modified": "2026-09-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-11/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-12.jpg",
+          "size": 341457,
+          "modified": "2026-09-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-12/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-13.jpg",
+          "size": 354464,
+          "modified": "2026-09-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-13/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-14.jpg",
+          "size": 367471,
+          "modified": "2026-09-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-14/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-15.jpg",
+          "size": 380478,
+          "modified": "2026-09-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-15/800/600"
+        },
+        {
+          "key": "mock-assets/2026/09/photo-16.jpg",
+          "size": 393485,
+          "modified": "2026-09-16T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-09-16/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-10",
+      "items": [
+        {
+          "key": "mock-assets/2026/10/photo-01.jpg",
+          "size": 206299,
+          "modified": "2026-10-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-02.jpg",
+          "size": 219306,
+          "modified": "2026-10-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-2/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-03.jpg",
+          "size": 232313,
+          "modified": "2026-10-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-3/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-04.jpg",
+          "size": 245320,
+          "modified": "2026-10-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-4/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-05.jpg",
+          "size": 258327,
+          "modified": "2026-10-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-5/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-06.jpg",
+          "size": 271334,
+          "modified": "2026-10-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-6/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-07.jpg",
+          "size": 284341,
+          "modified": "2026-10-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-7/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-08.jpg",
+          "size": 297348,
+          "modified": "2026-10-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-8/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-09.jpg",
+          "size": 310355,
+          "modified": "2026-10-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-9/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-10.jpg",
+          "size": 323362,
+          "modified": "2026-10-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-10/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-11.jpg",
+          "size": 336369,
+          "modified": "2026-10-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-11/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-12.jpg",
+          "size": 349376,
+          "modified": "2026-10-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-12/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-13.jpg",
+          "size": 362383,
+          "modified": "2026-10-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-13/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-14.jpg",
+          "size": 375390,
+          "modified": "2026-10-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-14/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-15.jpg",
+          "size": 388397,
+          "modified": "2026-10-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-15/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-16.jpg",
+          "size": 401404,
+          "modified": "2026-10-16T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-16/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-17.jpg",
+          "size": 414411,
+          "modified": "2026-10-17T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-17/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-18.jpg",
+          "size": 427418,
+          "modified": "2026-10-18T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-18/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-19.jpg",
+          "size": 440425,
+          "modified": "2026-10-19T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-19/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-20.jpg",
+          "size": 453432,
+          "modified": "2026-10-20T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-20/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-21.jpg",
+          "size": 466439,
+          "modified": "2026-10-21T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-21/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-22.jpg",
+          "size": 479446,
+          "modified": "2026-10-22T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-22/800/600"
+        },
+        {
+          "key": "mock-assets/2026/10/photo-23.jpg",
+          "size": 492453,
+          "modified": "2026-10-23T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-10-23/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-11",
+      "items": [
+        {
+          "key": "mock-assets/2026/11/photo-01.jpg",
+          "size": 214218,
+          "modified": "2026-11-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-02.jpg",
+          "size": 227225,
+          "modified": "2026-11-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-2/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-03.jpg",
+          "size": 240232,
+          "modified": "2026-11-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-3/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-04.jpg",
+          "size": 253239,
+          "modified": "2026-11-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-4/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-05.jpg",
+          "size": 266246,
+          "modified": "2026-11-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-5/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-06.jpg",
+          "size": 279253,
+          "modified": "2026-11-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-6/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-07.jpg",
+          "size": 292260,
+          "modified": "2026-11-07T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-7/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-08.jpg",
+          "size": 305267,
+          "modified": "2026-11-08T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-8/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-09.jpg",
+          "size": 318274,
+          "modified": "2026-11-09T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-9/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-10.jpg",
+          "size": 331281,
+          "modified": "2026-11-10T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-10/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-11.jpg",
+          "size": 344288,
+          "modified": "2026-11-11T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-11/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-12.jpg",
+          "size": 357295,
+          "modified": "2026-11-12T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-12/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-13.jpg",
+          "size": 370302,
+          "modified": "2026-11-13T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-13/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-14.jpg",
+          "size": 383309,
+          "modified": "2026-11-14T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-14/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-15.jpg",
+          "size": 396316,
+          "modified": "2026-11-15T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-15/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-16.jpg",
+          "size": 409323,
+          "modified": "2026-11-16T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-16/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-17.jpg",
+          "size": 422330,
+          "modified": "2026-11-17T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-17/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-18.jpg",
+          "size": 435337,
+          "modified": "2026-11-18T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-18/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-19.jpg",
+          "size": 448344,
+          "modified": "2026-11-19T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-19/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-20.jpg",
+          "size": 461351,
+          "modified": "2026-11-20T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-20/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-21.jpg",
+          "size": 474358,
+          "modified": "2026-11-21T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-21/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-22.jpg",
+          "size": 487365,
+          "modified": "2026-11-22T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-22/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-23.jpg",
+          "size": 500372,
+          "modified": "2026-11-23T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-23/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-24.jpg",
+          "size": 513379,
+          "modified": "2026-11-24T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-24/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-25.jpg",
+          "size": 526386,
+          "modified": "2026-11-25T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-25/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-26.jpg",
+          "size": 539393,
+          "modified": "2026-11-26T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-26/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-27.jpg",
+          "size": 552400,
+          "modified": "2026-11-27T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-27/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-28.jpg",
+          "size": 565407,
+          "modified": "2026-11-28T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-28/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-29.jpg",
+          "size": 578414,
+          "modified": "2026-11-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-29/800/600"
+        },
+        {
+          "key": "mock-assets/2026/11/photo-30.jpg",
+          "size": 591421,
+          "modified": "2026-11-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-11-30/800/600"
+        }
+      ]
+    },
+    {
+      "month": "2026-12",
+      "items": [
+        {
+          "key": "mock-assets/2026/12/photo-01.jpg",
+          "size": 222137,
+          "modified": "2026-12-01T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-12-1/800/600"
+        },
+        {
+          "key": "mock-assets/2026/12/photo-02.jpg",
+          "size": 235144,
+          "modified": "2026-12-02T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-12-2/800/600"
+        },
+        {
+          "key": "mock-assets/2026/12/photo-03.jpg",
+          "size": 248151,
+          "modified": "2026-12-03T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-12-3/800/600"
+        },
+        {
+          "key": "mock-assets/2026/12/photo-04.jpg",
+          "size": 261158,
+          "modified": "2026-12-04T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-12-4/800/600"
+        },
+        {
+          "key": "mock-assets/2026/12/photo-05.jpg",
+          "size": 274165,
+          "modified": "2026-12-05T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-12-5/800/600"
+        },
+        {
+          "key": "mock-assets/2026/12/photo-06.jpg",
+          "size": 287172,
+          "modified": "2026-12-06T12:00:00.000Z",
+          "url": "https://picsum.photos/seed/monthly-2026-12-6/800/600"
+        }
+      ]
+    }
+  ]
+}
