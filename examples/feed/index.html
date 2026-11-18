@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>My Monthly Feed</title>
+  <style>
+    body { font: 1rem/1.5 system-ui, sans-serif; margin: clamp(1rem, 3vw, 3rem); background: var(--wa-color-surface-lowered); }
+    main { box-sizing: border-box; max-width: 1400px; margin: 0 auto; background: var(--wa-color-surface-default); border-radius: var(--wa-border-radius-l); }
+    header { padding: clamp(1rem, 3vw, 2rem); background: #000; border-radius: var(--wa-border-radius-l) var(--wa-border-radius-l) 0 0; }
+    header .monthly-eyebrow { margin: 0; color: #fff; }
+    monthly-feed { padding: clamp(1rem, 3vw, 2rem); }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1 class="monthly-eyebrow">My Monthly Feed</h1>
+    </header>
+    <monthly-feed></monthly-feed>
+  </main>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
