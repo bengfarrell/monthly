@@ -26,7 +26,13 @@ export function localApi(environment: Record<string, string>): Plugin {
         response.setHeader("Cache-Control", "no-store");
         if (url.pathname.startsWith(`/${LOCAL_PREFIX}`)) {
           if (request.method !== "GET" && request.method !== "HEAD") throw new LocalHttpError(405, "Method not allowed.");
-          const asset = s3.assets.get(decodeURIComponent(url.pathname.slice(1)));
+          const key = decodeURIComponent(url.pathname.slice(1));
+          const document = s3.documents.get(key);
+          if (document) {
+            response.writeHead(200, { "Content-Type": "application/json", ETag: document.etag }).end(request.method === "HEAD" ? undefined : document.body);
+            return;
+          }
+          const asset = s3.assets.get(key);
           if (!asset) throw new LocalHttpError(404, "Mock asset not found.");
           response.writeHead(302, { Location: asset.url }).end();
           return;
@@ -48,7 +54,7 @@ export function localApi(environment: Record<string, string>): Plugin {
           });
           handlers.set(url.origin, handler);
         }
-        const { text } = await readBody(request, 8192);
+        const { text } = await readBody(request, url.pathname === "/posts" ? 65536 : 8192);
         const headers = Object.fromEntries(Object.entries(request.headers).map(([name, value]) => [
           name, Array.isArray(value) ? value.join(", ") : value,
         ]));
@@ -60,7 +66,7 @@ export function localApi(environment: Record<string, string>): Plugin {
       }
       server.middlewares.use((request, response, next) => {
         const path = request.url?.split("?")[0] ?? "";
-        if (!["/media", "/uploads", "/sign"].includes(path) &&
+        if (!["/media", "/uploads", "/sign", "/posts"].includes(path) &&
             !path.startsWith(`/${LOCAL_PREFIX}`) && !path.startsWith("/__monthly/s3/")) {
           next();
           return;

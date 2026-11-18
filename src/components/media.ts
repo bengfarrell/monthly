@@ -73,7 +73,9 @@ export class MonthlyMedia extends LitElement {
     }
   }
   navigate(event: KeyboardEvent, tab: MediaTab) {
-    const keys: Record<string, MediaTab> = { Home: "browse", End: "upload", ArrowLeft: tab === "browse" ? "upload" : "browse", ArrowRight: tab === "browse" ? "upload" : "browse" };
+    const tabs: MediaTab[] = ["browse", "upload", "post"];
+    const index = tabs.indexOf(tab);
+    const keys: Record<string, MediaTab> = { Home: "browse", End: "post", ArrowLeft: tabs[(index + 2) % 3], ArrowRight: tabs[(index + 1) % 3] };
     if (!keys[event.key]) return;
     event.preventDefault();
     this.observed!.selectTab(keys[event.key]);
@@ -98,11 +100,11 @@ export class MonthlyMedia extends LitElement {
       </header>
       <div class="monthly-toolbar">
         <div class="monthly-tabs" role="tablist" aria-label="Media">
-          ${(["browse", "upload"] as const).map(tab => html`<button class="monthly-tab" id=${`${this.idPrefix}-${tab}-tab`}
+          ${(["browse", "upload", "post"] as const).map(tab => html`<button class="monthly-tab" id=${`${this.idPrefix}-${tab}-tab`}
             role="tab" type="button" aria-controls=${`${this.idPrefix}-${tab}-panel`}
             aria-selected=${String(state.tab === tab)} tabindex=${state.tab === tab ? "0" : "-1"}
             ?disabled=${!state.authenticated} @click=${() => controller.selectTab(tab)}
-            @keydown=${(event: KeyboardEvent) => this.navigate(event, tab)}>${tab === "browse" ? "Browse" : "Upload"}</button>`)}
+            @keydown=${(event: KeyboardEvent) => this.navigate(event, tab)}>${{ browse: "Browse", upload: "Upload", post: "Post" }[tab]}</button>`)}
         </div>
         <div class="monthly-auth-actions">
           ${state.authenticated ? html`<wa-button class="monthly-button" size="s" type="button" ?disabled=${state.uploading} @click=${() => controller.signOut()}>Sign out</wa-button>` :
@@ -126,6 +128,9 @@ export class MonthlyMedia extends LitElement {
         </div>
         <div id=${`${this.idPrefix}-upload-panel`} role="tabpanel" aria-labelledby=${`${this.idPrefix}-upload-tab`} tabindex="0" ?hidden=${state.tab !== "upload"}>
           <monthly-upload .model=${controller.uploader}></monthly-upload>
+        </div>
+        <div id=${`${this.idPrefix}-post-panel`} role="tabpanel" aria-labelledby=${`${this.idPrefix}-post-tab`} tabindex="0" ?hidden=${state.tab !== "post"}>
+          <monthly-post .model=${controller.composer}></monthly-post>
         </div>
       </div>
     `;

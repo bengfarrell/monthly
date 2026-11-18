@@ -10,4 +10,8 @@ if (process.env.MONTHLY_DEV_MODE === "mock") {
   notice.className = "monthly-demo-notice";
   notice.textContent = "Local mock API: use the demo credentials in README. Uploads are simulated and reset when the server restarts.";
   manager.before(notice);
+  const feed = document.createElement("monthly-feed");
+  feed.baseUrl = `${location.origin}/mock-assets/`;
+  manager.after(feed);
+  manager.addEventListener("monthly-posted", () => { void feed.observed?.load(); });
 }

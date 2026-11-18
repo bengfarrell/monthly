@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { S3Client } from "@aws-sdk/client-s3";
+import { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { createHandler, parseBuckets, signUpload, MAX_FILE_SIZE, PART_SIZE } from "../lambda/handler.js";
 import { MEDIA_TYPES } from "../src/shared/media-types.js";
 import type { HandlerOptions, MediaEvent, UploadCommand } from "../lambda/handler.js";
-import type { ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 const config = {
   username: "owner", password: "fixture-only-password",
@@ -21,7 +20,7 @@ function event(route: string, body?: object, bucket = "first-bucket"): MediaEven
   };
 }
 function setup(options: Partial<HandlerOptions> = {}) {
-  const commands: (UploadCommand | ListObjectsV2Command)[] = [];
+  const commands: (UploadCommand | ListObjectsV2Command | GetObjectCommand)[] = [];
   const errors: unknown[][] = [];
   const handle = createHandler({
     config, now, logger: { error: (...args) => errors.push(args) },
@@ -45,7 +44,7 @@ async function prepare(handle: ReturnType<typeof createHandler>, overrides = {},
 
 test("every route requires Basic credentials; allowlist rejects unknown buckets before S3", async () => {
   const { handle, commands } = setup();
-  for (const route of ["GET /media", "POST /uploads", "POST /sign"]) {
+  for (const route of ["GET /media", "POST /uploads", "POST /sign", "POST /posts"]) {
     assert.equal((await handle({ ...event(route, {}), headers: {} })).statusCode, 401);
     assert.equal((await handle(event(route, {}, "unknown-bucket"))).statusCode, 403);
   }
@@ -63,6 +62,14 @@ test("listing is prefix scoped and returns encoded CDN URLs and pagination", asy
   assert.equal(commands[0].input.Prefix, "media/2026/11/");
   assert.equal(page.items[0].url, "https://first.example.com/media/2026/11/image%20%231.png");
   assert.equal(page.cursor, "next");
+});
+
+test("monthly post metadata does not appear in the media library", async () => {
+  const { handle } = setup({ clientForRegion: () => ({ send: async () => ({
+    Contents: [{ Key: "media/2026/11/posts.json", Size: 100 }, { Key: "media/2026/11/photo.png", Size: 123 }],
+  }) }) });
+  const response = await handle(event("GET /media"));
+  assert.deepEqual(JSON.parse(response.body).items.map((item: { key: string }) => item.key), ["media/2026/11/photo.png"]);
 });
 
 test("keys preserve ordinary filenames, sanitize paths and share limits and types", async () => {

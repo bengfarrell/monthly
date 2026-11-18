@@ -1,6 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import {
-  S3Client, ListObjectsV2Command, PutObjectCommand,
+  S3Client, ListObjectsV2Command, PutObjectCommand, GetObjectCommand,
   CreateMultipartUploadCommand, UploadPartCommand, ListPartsCommand,
   CompleteMultipartUploadCommand, AbortMultipartUploadCommand,
   type ListObjectsV2CommandOutput,
@@ -8,6 +8,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { MEDIA_TYPES as TYPES, isRecord, mediaType, MAX_FILE_SIZE, PART_SIZE } from "../src/shared/media-types.js";
 import { asError } from "../src/shared/errors.js";
+import { POSTS_FILE, readPosts, validatePostInput, type Post } from "../src/shared/posts.js";
 export { MAX_FILE_SIZE, PART_SIZE };
 
 const GRANT_LIFETIME = 24 * 60 * 60;
@@ -22,7 +23,10 @@ export interface MediaEvent {
 export type UploadCommand = PutObjectCommand | CreateMultipartUploadCommand | UploadPartCommand |
   ListPartsCommand | CompleteMultipartUploadCommand | AbortMultipartUploadCommand;
 export interface MediaS3Client {
-  send(command: ListObjectsV2Command): Promise<Pick<ListObjectsV2CommandOutput, "Contents" | "IsTruncated" | "NextContinuationToken">>;
+  send(command: ListObjectsV2Command | GetObjectCommand | PutObjectCommand): Promise<
+    Pick<ListObjectsV2CommandOutput, "Contents" | "IsTruncated" | "NextContinuationToken"> &
+    { Body?: { transformToString(): Promise<string> }; ETag?: string }
+  >;
 }
 export interface HandlerOptions {
   config: { username?: string; password?: string; buckets: unknown };
@@ -63,7 +67,8 @@ function json(statusCode: number, value: unknown) {
   return { statusCode, headers: { "content-type": "application/json", "cache-control": "no-store" }, body: JSON.stringify(value) };
 }
 function parseBody(event: MediaEvent): Record<string, unknown> {
-  if (event.isBase64Encoded || typeof event.body !== "string" || event.body.length > 8192) reject("Expected a small JSON request.");
+  const limit = event.routeKey === "POST /posts" ? 65536 : 8192;
+  if (event.isBase64Encoded || typeof event.body !== "string" || Buffer.byteLength(event.body) > limit) reject("Expected a small JSON request.");
   let body: unknown;
   try { body = JSON.parse(event.body); }
   catch { reject("Invalid JSON."); }
@@ -176,11 +181,63 @@ export function createHandler({ clientForRegion, sign = signUpload, config, now 
         }));
         return json(200, {
           bucket,
-          items: (result.Contents || []).filter((item): item is typeof item & { Key: string } => !!item.Key && !item.Key.endsWith("/")).map(item => ({
+          items: (result.Contents || []).filter((item): item is typeof item & { Key: string } => !!item.Key && !item.Key.endsWith("/") && !item.Key.endsWith(`/${POSTS_FILE}`)).map(item => ({
             key: item.Key, size: item.Size, modified: item.LastModified?.toISOString(), url: mediaUrl(publicBaseUrl, item.Key),
           })),
           cursor: result.IsTruncated ? result.NextContinuationToken : null,
         });
+      }
+      if (route === "POST /posts") {
+        const body = parseBody(event);
+        const { bucket, prefix, publicBaseUrl, region } = destination(body.bucket);
+        try { validatePostInput(body); }
+        catch (error) { reject(asError(error).message); }
+        const date = now();
+        const month = date.toISOString().slice(0, 7);
+        if (body.month !== month) reject("Posts must use the current UTC month. Start a new post after the month changes.");
+        const folder = monthPrefix(month, prefix);
+        const media = body.media.map(item => {
+          const filename = item.key.slice(folder.length);
+          if (!item.key.startsWith(folder) || !/^[a-zA-Z0-9_-][a-zA-Z0-9._-]{0,159}$/.test(filename)) {
+            reject("Post media must belong to the current month.");
+          }
+          return { key: item.key, size: item.size, url: mediaUrl(publicBaseUrl, item.key) };
+        });
+        const post: Post = {
+          id: body.id, text: body.text.trim(), tags: [...new Set(body.tags.map(tag => tag.trim()))],
+          media, created: date.toISOString(),
+        };
+        const client = getClient(region);
+        const input = { Bucket: bucket, Key: `${folder}${POSTS_FILE}` };
+        for (let attempt = 0; attempt < 5; attempt++) {
+          let posts: Post[] = [];
+          let etag: string | undefined;
+          try {
+            const object = await client.send(new GetObjectCommand(input));
+            if (!object.Body || !object.ETag) throw new Error("Monthly posts object is missing its body or ETag.");
+            posts = readPosts(JSON.parse(await object.Body.transformToString()), month);
+            etag = object.ETag;
+          } catch (error) {
+            if (!(error instanceof Error) || error.name !== "NoSuchKey") throw error;
+          }
+          const existing = posts.find(item => item.id === post.id);
+          if (existing) {
+            if (JSON.stringify({ ...existing, created: "" }) !== JSON.stringify({ ...post, created: "" })) {
+              throw new HttpError(409, "This post ID already belongs to a different post.");
+            }
+            return json(200, { bucket, post: existing, url: mediaUrl(publicBaseUrl, input.Key) });
+          }
+          try {
+            await client.send(new PutObjectCommand({
+              ...input, Body: JSON.stringify([...posts, post]), ContentType: "application/json",
+              CacheControl: "no-cache", ...(etag ? { IfMatch: etag } : { IfNoneMatch: "*" }),
+            }));
+            return json(201, { bucket, post, url: mediaUrl(publicBaseUrl, input.Key) });
+          } catch (error) {
+            if (!(error instanceof Error) || !["PreconditionFailed", "ConditionalRequestConflict"].includes(error.name)) throw error;
+          }
+        }
+        throw new HttpError(409, "The monthly posts file changed repeatedly. Retry your post.");
       }
       if (route === "POST /uploads") {
         const body = parseBody(event);

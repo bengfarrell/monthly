@@ -32,6 +32,7 @@ export interface MediaUploaderOptions {
 export class MediaUploader extends Store<UploaderState> {
   #grants = new Map<string, UploadGrant>();
   #proposals = new Map<string, UppyFile<Meta, AwsBody>>();
+  #items = new Map<string, MediaItem>();
   api: Pick<MediaApi, "prepare" | "sign">;
   uppy: Uppy<Meta, AwsBody>;
 
@@ -70,7 +71,9 @@ export class MediaUploader extends Store<UploaderState> {
         this.setState({ error: new Error("Upload finished but its public URL is missing. Refresh the library.") });
         return;
       }
-      this.setState({ uploaded: [{ key: grant.key, url: grant.url, size: file.size }, ...this.state.uploaded] });
+      const item = { key: grant.key, url: grant.url, size: file.size };
+      this.#items.set(file.id, item);
+      this.setState({ uploaded: [item, ...this.state.uploaded] });
       this.#publish();
     });
     this.uppy.on("complete", result => {
@@ -141,6 +144,20 @@ export class MediaUploader extends Store<UploaderState> {
     if (this.state.uploading) return;
     this.uppy.removeFile(id);
     this.#publish();
+  }
+
+  completedMedia() {
+    return this.state.files.filter(file => file.complete).map(file => {
+      const item = this.#items.get(file.id);
+      if (!item) throw new Error("Uploaded media is missing. Remove the file and upload it again.");
+      return item;
+    });
+  }
+
+  clear() {
+    this.cancel();
+    this.#items.clear();
+    this.setState({ uploaded: [], error: null, summary: "" });
   }
 
   async upload() {

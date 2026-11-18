@@ -10,9 +10,12 @@ import "@awesome.me/webawesome/dist/components/progress-bar/progress-bar.js";
 
 export class MonthlyUpload extends LitElement {
   declare model?: MediaUploader;
+  declare posting: boolean;
+  declare disabled: boolean;
   observed?: MediaUploader | null;
   unsubscribe?: Unsubscribe;
-  static properties = { model: { attribute: false } };
+  static properties = { model: { attribute: false }, posting: { type: Boolean }, disabled: { type: Boolean } };
+  constructor() { super(); this.posting = false; this.disabled = false; }
   createRenderRoot() { return this; }
   connectedCallback() { super.connectedCallback(); this.observe(); }
   willUpdate(changed: PropertyValues<this>) { if (changed.has("model")) this.observe(); }
@@ -27,22 +30,23 @@ export class MonthlyUpload extends LitElement {
     if (!this.model) return nothing;
     const model = this.model;
     const state = model.state;
+    const disabled = this.disabled || state.uploading;
     return html`
       <div class="monthly-section-heading">
         <div><h2>Upload media</h2><p class="monthly-description">Add originals directly to your library, ready to share.</p></div>
         <wa-badge variant="neutral" pill>${state.files.length} / 20 queued</wa-badge>
       </div>
-      <label>Upload month (UTC)
+      ${this.posting ? html`<p class="monthly-description">Media is saved in the current UTC month. It uploads when you publish.</p>` : html`<label>Upload month (UTC)
         <input type="month" aria-label="Upload month" .value=${state.month} ?disabled=${state.uploading} @change=${(event: Event) => model.setMonth((event.target as HTMLInputElement).value)}>
-      </label>
+      </label>`}
       <div class="monthly-dropzone" @dragover=${(event: DragEvent) => event.preventDefault()} @drop=${(event: DragEvent) => {
         event.preventDefault();
-        if (event.dataTransfer) model.addFiles(event.dataTransfer.files);
+        if (!disabled && event.dataTransfer) model.addFiles(event.dataTransfer.files);
       }}>
         <strong>Drop your media here</strong>
         <p class="monthly-description">Images, video, and audio. Up to 20 files, 2 GiB each.</p>
         <label>Choose files or drop them here
-          <input type="file" multiple aria-label="Choose files" ?disabled=${state.uploading} @change=${(event: Event) => {
+          <input type="file" multiple aria-label=${this.posting ? "Choose post media" : "Choose files"} ?disabled=${disabled} @change=${(event: Event) => {
             const input = event.target as HTMLInputElement;
             if (input.files) model.addFiles(input.files);
             input.value = "";
@@ -56,19 +60,19 @@ export class MonthlyUpload extends LitElement {
           <wa-progress-bar .value=${file.progress} label=${`Upload progress for ${file.name}`}></wa-progress-bar>
           ${file.error ? html`<span class="monthly-error">${file.error}</span>` : nothing}
           ${file.complete ? html`<wa-badge variant="success" pill>Uploaded</wa-badge>` : nothing}
-          <wa-button class="monthly-button" size="s" type="button" ?disabled=${state.uploading} @click=${() => model.removeFile(file.id)}>
+          <wa-button class="monthly-button" size="s" type="button" ?disabled=${disabled} @click=${() => model.removeFile(file.id)}>
             Remove<span class="monthly-sr-only"> ${file.name}</span>
           </wa-button>
         </li>`)}
       </ul>
-      <div class="monthly-upload-actions">
-        <wa-button class="monthly-button" variant="brand" type="button" ?disabled=${state.uploading || !state.files.some(file => !file.complete)} ?loading=${state.uploading} @click=${() => model.upload()}>Upload files</wa-button>
+      <div class="monthly-upload-actions" ?hidden=${this.posting && !state.uploading}>
+        <wa-button class="monthly-button" variant="brand" type="button" ?hidden=${this.posting} ?disabled=${disabled || !state.files.some(file => !file.complete)} ?loading=${state.uploading} @click=${() => model.upload()}>Upload files</wa-button>
         <wa-button class="monthly-button" type="button" ?disabled=${!state.files.length} @click=${() => model.cancel()}>Cancel uploads</wa-button>
       </div>
       <wa-callout class="monthly-upload-status" variant=${state.uploading ? "brand" : "neutral"} role="status">
         ${state.uploading ? "Uploading. Keep this page open." : state.summary || "Choose files to start uploading."}
       </wa-callout>
-      ${state.uploaded.length ? html`<h3>Uploaded URLs</h3><ul class="monthly-grid">
+      ${!this.posting && state.uploaded.length ? html`<h3>Uploaded URLs</h3><ul class="monthly-grid">
         ${repeat(state.uploaded, (item, index) => `${item.key}-${index}`, item => html`<li><monthly-asset .item=${item} .preview=${false}></monthly-asset></li>`)}
       </ul>` : nothing}
     `;

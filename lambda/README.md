@@ -1,17 +1,32 @@
 # AWS media API
 
-The extracted Lambda preserves the existing three HTTP API payload-2.0 routes:
+The Lambda preserves the existing media HTTP API payload-2.0 routes and adds posting:
 
 | Route | Purpose |
 | --- | --- |
 | `GET /media` | Query `bucket`, optional `month` (YYYY-MM) and pagination `cursor` |
 | `POST /uploads` | JSON `bucket`, filename `name`, canonical `type`, `size`, `month` |
 | `POST /sign` | JSON `bucket`, grant `key` / `ticket`, HTTP `method`, optional multipart fields |
+| `POST /posts` | JSON `bucket`, current UTC `month`, UUID `id`, `text`, `tags` array, `media` array of `{ key, size }` |
 
 Every route checks Basic authorization over HTTPS. Use **NONE** for API Gateway
 authorization; do not add a JWT authorizer. Check the spelling of all routes,
 their Lambda integrations and invoke permissions. Renaming a route can leave a
 Lambda resource-policy permission pointing to the old path.
+Existing deployments must add `POST /posts` with its Lambda integration and
+invoke permission as well as uploading the new Lambda ZIP.
+
+Posts may contain text, media, or both. Text is limited to 4000 characters;
+tags to 32 entries of 64 characters each; media to 20 supported assets in the
+current month. The frontend merges hashtags into the separate tags array;
+the API accepts tags as supplied and derives public media URLs from bucket
+configuration. The API does not move or upload media as part of saving a post.
+It reads `<prefix>YYYY/MM/posts.json`, appends to its JSON array, and conditionally
+writes it back. Only `NoSuchKey` creates a new file; permission/read/JSON errors
+never overwrite an existing file. ETag conflicts retry up to five times, then
+return 409. Reposting the identical UUID/payload returns the saved post without
+appending again; reusing an ID with different content returns 409. Existing media
+listings omit `posts.json`.
 
 ## Configuration and deployment
 
@@ -87,6 +102,11 @@ Repeat with the appropriate bucket and prefix for each allowlisted destination:
         "s3:ListMultipartUploadParts"
       ],
       "Resource": "arn:aws:s3:::site-one-media/wp-content/uploads/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::site-one-media/wp-content/uploads/*/posts.json"
     }
   ]
 }
@@ -151,3 +171,31 @@ existing object ACLs during this additive rollout. Preserve all existing
 policy statements and permissions used by other prefixes or applications.
 Check both old and new asset URLs after deployment. Invalidate an individual
 path if CloudFront cached a previous 403 or an overwritten asset.
+
+## Public post JSON and caching
+
+The public feed reads JSON through the configured CDN, not through the
+authenticated API. Its base URL includes the prefix, for example
+`https://your-distribution.cloudfront.net/wp-content/uploads/`.
+No Eleventy rebuild is needed when a post is published.
+
+For cross-origin feeds, allow unauthenticated GET/HEAD from the site's origin
+using a CloudFront response headers policy, or forward `Origin` to S3 and
+include it in the cache key with the bucket CORS rule above. Keep these read
+rules separate from the API's authenticated CORS settings.
+
+Post JSON is written with `Content-Type: application/json` and
+`Cache-Control: no-cache`. Configure the CloudFront behavior covering
+`<prefix>*/posts.json` with **minimum TTL 0** so revalidation reaches S3.
+Set error caching minimum TTL to 0 for 403/404 responses (S3 origins can still
+cache errors briefly). Otherwise a previously missing month can stay missing
+after its first post. Invalidate existing cached JSON/errors when changing the
+policy. Retain the existing long-lived cache behavior for media.
+
+S3 with OAC can return 403 for missing public objects rather than 404. The feed
+keeps available months and logs failed monthly reads with `console.warn`,
+without displaying request failures in the UI. Only 404 is treated as an
+absent month; other failures remain in the model's `state.errors` for
+diagnostics. Browsers can still show their own HTTP/network error entries,
+which frontend JavaScript cannot suppress. Credentials are never required
+for feed reads.

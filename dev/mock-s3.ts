@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import {
   AbortMultipartUploadCommand, CompleteMultipartUploadCommand, CreateMultipartUploadCommand,
-  ListPartsCommand, PutObjectCommand, UploadPartCommand,
+  ListPartsCommand, PutObjectCommand, UploadPartCommand, GetObjectCommand, ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import type { MediaS3Client, UploadCommand } from "../lambda/handler.js";
 import type { MediaItem } from "../src/shared/media-types.js";
@@ -34,6 +34,7 @@ export async function readBody(request: IncomingMessage, limit: number, collect 
 
 export class MockS3 implements MediaS3Client {
   readonly assets: Map<string, MediaItem>;
+  readonly documents = new Map<string, { body: string; etag: string }>();
   #signatures = new Map<string, { command: UploadCommand; expires: number }>();
   #uploads = new Map<string, MultipartUpload>();
 
@@ -43,6 +44,22 @@ export class MockS3 implements MediaS3Client {
 
   send: MediaS3Client["send"] = async command => {
     if (command.input.Bucket !== LOCAL_BUCKET) throw new Error("The mock S3 client only supports the local bucket.");
+    if (command instanceof GetObjectCommand) {
+      const object = this.documents.get(command.input.Key!);
+      if (!object) throw Object.assign(new Error("Object not found."), { name: "NoSuchKey" });
+      return { Body: { transformToString: async () => object.body }, ETag: object.etag };
+    }
+    if (command instanceof PutObjectCommand) {
+      const object = this.documents.get(command.input.Key!);
+      if ((command.input.IfNoneMatch === "*" && object) || (command.input.IfMatch && command.input.IfMatch !== object?.etag)) {
+        throw Object.assign(new Error("Object changed."), { name: "PreconditionFailed" });
+      }
+      if (typeof command.input.Body !== "string") throw new Error("Mock document writes require a string.");
+      const etag = `"${randomUUID()}"`;
+      this.documents.set(command.input.Key!, { body: command.input.Body, etag });
+      return { ETag: etag };
+    }
+    if (!(command instanceof ListObjectsV2Command)) throw new Error("Unsupported mock S3 command.");
     const prefix = command.input.Prefix ?? "";
     let after = "";
     if (command.input.ContinuationToken) {

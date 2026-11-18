@@ -1,6 +1,7 @@
 import { MediaAuth } from "./auth.js";
 import { PART_SIZE, httpsUrl, isRecord, mediaType, validateConnection, validateFile, validateMonth } from "../shared/media-types.js";
 import type { MediaFile, MediaItem } from "../shared/media-types.js";
+import { readPosts, type PostInput } from "../shared/posts.js";
 
 export interface MediaApiOptions {
   apiUrl: string;
@@ -101,8 +102,19 @@ export class MediaApi {
     if (typeof grant.key !== "string" || typeof grant.ticket !== "string" || typeof grant.url !== "string" || grant.partSize !== PART_SIZE) {
       throw new Error("Invalid upload grant or incompatible API part size.");
     }
+
     httpsUrl(grant.url);
     return { bucket: this.config.bucket, key: grant.key, ticket: grant.ticket, url: grant.url, partSize: grant.partSize };
+  }
+
+  async post(input: PostInput, month: string) {
+    validateMonth(month);
+    const data = await this.request("/posts", {
+      ...input, month, media: input.media.map(({ key, size }) => ({ key, size })),
+    });
+    const post = readPosts([data.post], month)[0];
+    if (post.id !== input.id) throw new Error("The media API returned a different post.");
+    return post;
   }
 
   async sign(request: SignRequest, grant: UploadGrant): Promise<SignedUpload> {

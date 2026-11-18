@@ -3,11 +3,12 @@ import { MediaAuth } from "./auth.js";
 import { MediaApi } from "./api.js";
 import { MediaLibrary } from "./library.js";
 import { MediaUploader } from "./uploader.js";
+import { PostComposer } from "./composer.js";
 import type { MediaApiOptions } from "./api.js";
 import type { Unsubscribe } from "./store.js";
 import { asError } from "../shared/errors.js";
 
-export type MediaTab = "browse" | "upload";
+export type MediaTab = "browse" | "upload" | "post";
 export interface ControllerState {
   authenticated: boolean;
   signingIn: boolean;
@@ -22,11 +23,13 @@ export interface MediaControllerOptions extends Omit<MediaApiOptions, "auth" | "
 export class MediaController extends Store<ControllerState> {
   #attempt = 0;
   #unsubscribeUploader: Unsubscribe | null = null;
+  #unsubscribeComposer: Unsubscribe | null = null;
   auth: MediaAuth;
   api: MediaApi;
   library: MediaLibrary;
   uploaderFactory: (api: MediaApi) => MediaUploader;
   uploader: MediaUploader | null;
+  composer: PostComposer | null = null;
 
   constructor({ uploaderFactory = api => new MediaUploader(api), ...options }: MediaControllerOptions) {
     super({ authenticated: false, signingIn: false, uploading: false, tab: "browse", error: null });
@@ -57,7 +60,10 @@ export class MediaController extends Store<ControllerState> {
       if (attempt !== this.#attempt) return false;
       if (!loaded) throw this.library.state.error || new Error("Could not load the media library.");
       this.uploader = this.uploaderFactory(this.api);
-      this.#unsubscribeUploader = this.uploader.subscribe(state => this.setState({ uploading: state.uploading }));
+      const updateBusy = () => this.setState({ uploading: !!(this.uploader?.state.uploading || this.composer?.state.publishing) });
+      this.#unsubscribeUploader = this.uploader.subscribe(updateBusy);
+      this.composer = new PostComposer(this.api);
+      this.#unsubscribeComposer = this.composer.subscribe(updateBusy);
       this.setState({ authenticated: true, tab: "browse" });
       return true;
     } catch (error) {
@@ -72,7 +78,7 @@ export class MediaController extends Store<ControllerState> {
   }
 
   selectTab(tab: MediaTab) {
-    if (!["browse", "upload"].includes(tab)) throw new Error("Unknown media tab.");
+    if (!["browse", "upload", "post"].includes(tab)) throw new Error("Unknown media tab.");
     if (this.state.authenticated) this.setState({ tab });
   }
 
@@ -84,6 +90,10 @@ export class MediaController extends Store<ControllerState> {
     this.#attempt++;
     this.#unsubscribeUploader?.();
     this.#unsubscribeUploader = null;
+    this.#unsubscribeComposer?.();
+    this.#unsubscribeComposer = null;
+    this.composer?.destroy();
+    this.composer = null;
     this.uploader?.destroy();
     this.uploader = null;
     this.auth.clear();

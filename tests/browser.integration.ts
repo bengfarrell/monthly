@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LOCAL_BUCKET, LOCAL_PASSWORD, LOCAL_USERNAME, loadAssets } from "../dev/fixtures.js";
 import type { MediaPage, SignedUpload, UploadGrant } from "../src/core/api.js";
+import { ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 type UploadInput = UploadCommand["input"] & {
   PartNumber?: number; ContentLength?: number; ContentType?: string;
@@ -44,7 +45,7 @@ test("production bundles register Web Awesome controls and include the theme wit
     const signIn = page.getByRole("button", { name: "Sign in", exact: true });
     await signIn.waitFor();
     assert.equal(await signIn.evaluate(button => button.getRootNode() instanceof ShadowRoot), true);
-    assert.equal(await page.evaluate(() => ["wa-button", "wa-card", "wa-badge", "wa-callout", "wa-progress-bar"].every(tag => customElements.get(tag))), true);
+    assert.equal(await page.evaluate(() => ["wa-button", "wa-card", "wa-badge", "wa-callout", "wa-progress-bar", "monthly-post", "monthly-feed"].every(tag => customElements.get(tag))), true);
     assert.notEqual(await page.locator("monthly-media").evaluate(element => getComputedStyle(element).getPropertyValue("--wa-color-brand-fill-loud").trim()), "");
     assert.notEqual(await signIn.evaluate(button => getComputedStyle(button).backgroundColor), "rgba(0, 0, 0, 0)");
     await signIn.click();
@@ -76,7 +77,7 @@ test("Vite hot-updates CSS, reloads source and HTML, and keeps env files private
     await server.listen();
     const address = server.httpServer!.address();
     assert.ok(address && typeof address !== "string");
-    const origin = `https://127.0.0.1:${address.port}`;
+    const origin = `https://localhost:${address.port}`;
     browser = await chromium.launch({ headless: true, ...(process.env.MONTHLY_BROWSER_CHANNEL && { channel: process.env.MONTHLY_BROWSER_CHANNEL }) });
     const page = await browser.newPage({ ignoreHTTPSErrors: true });
     await page.goto(origin);
@@ -114,7 +115,7 @@ test("local Lambda server uses fixtures, enforces auth, paginates, and handles r
     await server.listen();
     const address = server.httpServer!.address();
     assert.ok(address && typeof address !== "string");
-    const origin = `https://127.0.0.1:${address.port}`;
+    const origin = `https://localhost:${address.port}`;
     browser = await chromium.launch({ headless: true, ...(process.env.MONTHLY_BROWSER_CHANNEL && { channel: process.env.MONTHLY_BROWSER_CHANNEL }) });
     const page = await browser.newPage({ ignoreHTTPSErrors: true });
     const headers = { Authorization: `Basic ${Buffer.from(`${LOCAL_USERNAME}:${LOCAL_PASSWORD}`).toString("base64")}` };
@@ -197,7 +198,41 @@ test("local Lambda server uses fixtures, enforces auth, paginates, and handles r
     assert.match(await parts.text(), /<Size>123<\/Size>/);
     assert.equal((await page.request.delete(await sign({ method: "DELETE", uploadId }))).status(), 204);
     assert.equal((await page.request.get(await sign({ method: "GET", uploadId }))).status(), 404);
-    assert.ok(outsideRequests.every(url => new URL(url).hostname === "picsum.photos"));
+    await page.getByRole("tab", { name: "Post", exact: true }).click();
+    assert.equal(await page.locator("monthly-post input[type=month]").count(), 0);
+    const text = "Morning update #Outside #HELLO\n<img src=x onerror=alert(1)>";
+    await page.getByLabel("Message", { exact: true }).fill(text);
+    await page.getByLabel("Tags (comma-separated)", { exact: true }).fill("personal, outside");
+    await page.getByLabel("Choose post media", { exact: true }).setInputFiles([
+      { name: "post-photo.png", mimeType: "image/png", buffer: Buffer.alloc(123) },
+      { name: "post-audio.mp3", mimeType: "audio/mpeg", buffer: Buffer.alloc(123) },
+      { name: "post-video.mp4", mimeType: "video/mp4", buffer: Buffer.alloc(123) },
+    ]);
+    await page.getByRole("button", { name: "Publish post", exact: true }).click();
+    await page.getByRole("status").filter({ hasText: "Post published." }).waitFor();
+    await page.locator("monthly-feed article").waitFor();
+    assert.equal(await page.locator("monthly-feed .monthly-post-text").textContent(), text);
+    assert.equal(await page.locator("monthly-feed img").count(), 1);
+    assert.equal(await page.locator("monthly-feed video[controls]").count(), 1);
+    assert.equal(await page.locator("monthly-feed audio[controls]").count(), 1);
+    assert.equal(await page.locator("monthly-feed .monthly-post-media a").count(), 0);
+    assert.equal((await page.locator("monthly-feed .monthly-post-media").textContent())!.trim(), "");
+    assert.deepEqual(await page.locator("monthly-feed .monthly-post-tags li").allTextContents(), ["#personal", "#outside", "#hello"]);
+    assert.equal(await page.getByLabel("Message", { exact: true }).inputValue(), "");
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    const publicJson = await page.request.get(`${origin}/mock-assets/${currentMonth.replace("-", "/")}/posts.json`);
+    assert.equal(publicJson.status(), 200);
+    const posts = await publicJson.json();
+    assert.equal(posts.length, 1);
+    assert.equal(posts[0].media.length, 3);
+    assert.ok(posts[0].media.every((item: { key: string }) => item.key.startsWith(`mock-assets/${currentMonth.replace("-", "/")}/`)));
+    await page.getByLabel("Message", { exact: true }).fill("Another text-only update");
+    await page.getByRole("button", { name: "Publish post", exact: true }).click();
+    await page.waitForFunction(() => document.querySelectorAll("monthly-feed article").length === 2);
+    assert.equal(await page.locator("monthly-feed .monthly-post-text").first().textContent(), "Another text-only update");
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    assert.equal(await page.locator("monthly-feed article").count(), 2);
+    assert.ok(outsideRequests.every(url => ["picsum.photos", "interactive-examples.mdn.mozilla.net"].includes(new URL(url).hostname)));
   } finally {
     await browser?.close();
     await server.close();
@@ -213,7 +248,7 @@ test("Lit media views preserve login, filtering, clipboard, uploads, styling and
     const address = server.httpServer!.address();
     assert.ok(address && typeof address !== "string");
     const port = address.port;
-    const origin = `http://127.0.0.1:${port}`;
+    const origin = `http://localhost:${port}`;
     const apiOrigin = "https://api.monthly.test";
     const username = "fixture";
     const password = "fixture-only-password";
@@ -231,14 +266,16 @@ test("Lit media views preserve login, filtering, clipboard, uploads, styling and
           "second-bucket": { prefix: "uploads/", publicBaseUrl: "https://second.monthly.test", region: "us-east-1" },
         },
       },
-      clientForRegion: () => ({ send: async command => ({
+      clientForRegion: () => ({ send: async command => {
+        assert.ok(command instanceof ListObjectsV2Command);
+        return ({
         Contents: command.input.ContinuationToken ? [] : [
           { Key: `${command.input.Bucket === "first-bucket" ? "media" : "uploads"}/2026/11/existing.png`, Size: 123 },
           { Key: `media/2026/11/${"long-filename-".repeat(12)}recording.wav`, Size: 123 },
         ],
         IsTruncated: !command.input.ContinuationToken,
         NextContinuationToken: command.input.ContinuationToken ? undefined : "next",
-      }) }),
+      }); } }),
       sign: async (client, command) => {
         const url = new URL("https://s3.monthly.test/upload");
         url.searchParams.set("operation", command.constructor.name);
@@ -339,8 +376,8 @@ test("Lit media views preserve login, filtering, clipboard, uploads, styling and
     assert.equal(requests.at(-1)!.query.month, "2025-01");
     assert.equal(requests.at(-1)!.query.cursor, "next");
     await page.getByRole("tab", { name: "Browse", exact: true }).press("End");
-    assert.equal(await page.getByRole("tab", { name: "Upload", exact: true }).getAttribute("aria-selected"), "true");
-    await page.getByRole("tab", { name: "Upload", exact: true }).press("Home");
+    assert.equal(await page.getByRole("tab", { name: "Post", exact: true }).getAttribute("aria-selected"), "true");
+    await page.getByRole("tab", { name: "Post", exact: true }).press("Home");
     assert.equal(await page.getByRole("tab", { name: "Browse", exact: true }).getAttribute("aria-selected"), "true");
     await page.getByRole("tab", { name: "Upload", exact: true }).click();
     await page.getByLabel("Choose files", { exact: true }).setInputFiles({ name: "small.png", mimeType: "image/png", buffer: Buffer.alloc(123) });
@@ -418,6 +455,170 @@ test("Lit media views preserve login, filtering, clipboard, uploads, styling and
     assert.deepEqual(errors, []);
   } finally {
     releaseUpload?.();
+    await browser?.close();
+    await server.close();
+  }
+});
+
+test("standalone feed demo reads public CDN posts without API settings or a manager", { timeout: 30000 }, async () => {
+  const previous = {
+    MONTHLY_FEED_URL: process.env.MONTHLY_FEED_URL,
+    MONTHLY_API_URL: process.env.MONTHLY_API_URL,
+    MONTHLY_BUCKET: process.env.MONTHLY_BUCKET,
+  };
+  let server: Awaited<ReturnType<typeof createServer>>;
+  try {
+    process.env.MONTHLY_API_URL = "";
+    process.env.MONTHLY_BUCKET = "";
+    process.env.MONTHLY_FEED_URL = "";
+    await assert.rejects(createServer({ mode: "feed", server: { port: 0 } }), /Set MONTHLY_FEED_URL/);
+    process.env.MONTHLY_FEED_URL = "https://feed.monthly.test/wp-content/uploads/";
+    server = await createServer({ mode: "feed", server: { port: 0 } });
+  } finally {
+    for (const [name, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+  let browser: Browser | undefined;
+  try {
+    assert.equal(server.config.server.host, "localhost");
+    assert.equal(server.config.server.https, undefined);
+    assert.equal(server.config.plugins.some(plugin => plugin.name === "monthly-local-lambda"), false);
+    await server.listen();
+    const address = server.httpServer!.address();
+    assert.ok(address && typeof address !== "string");
+    const origin = `http://localhost:${address.port}`;
+    browser = await chromium.launch({ headless: true, ...(process.env.MONTHLY_BROWSER_CHANNEL && { channel: process.env.MONTHLY_BROWSER_CHANNEL }) });
+    const page = await browser.newPage();
+    const requests: string[] = [];
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    const warnings: string[] = [];
+    const appErrors: string[] = [];
+    page.on("console", message => {
+      if (!message.text().startsWith("Monthly feed:")) return;
+      if (message.type() === "warning") warnings.push(message.text());
+      if (message.type() === "error") appErrors.push(message.text());
+    });
+    const created = new Date().toISOString();
+    const month = created.slice(0, 7).replace("-", "/");
+    const date = new Date(created);
+    const forbiddenMonth = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() - 1, 1)).toISOString().slice(0, 7).replace("-", "/");
+    let text = "A deployed post";
+    let available = true;
+    let historical = false;
+    await page.route("https://feed.monthly.test/**", route => {
+      const request = route.request();
+      requests.push(new URL(request.url()).pathname);
+      assert.equal(request.method(), "GET");
+      assert.equal(request.headers().authorization, undefined);
+      const current = request.url().includes(`/${month}/`);
+      const previousMonth = request.url().includes(`/${forbiddenMonth}/`);
+      return route.fulfill({
+        status: available && (current || (historical && previousMonth)) ? 200 : previousMonth ? 403 : 404,
+        contentType: "application/json",
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify(Array.from({ length: current ? historical ? 2 : 3 : 1 }, (_, index) => ({
+          id: `6e809217-28d0-41bd-b722-4fc7b552486${index}`,
+          created: current ? created : `${forbiddenMonth.replace("/", "-")}-15T12:00:00.000Z`,
+          text: current ? text : "A post from last month", tags: ["demo"], media: [],
+        }))),
+      });
+    });
+    await page.goto(origin);
+    await page.getByRole("heading", { name: "My Monthly Feed", exact: true }).waitFor();
+    await page.locator("monthly-feed article").first().waitFor();
+    assert.equal(await page.title(), "My Monthly Feed");
+    assert.equal(await page.locator("header").evaluate(header => getComputedStyle(header).backgroundColor), "rgb(0, 0, 0)");
+    assert.equal(await page.getByRole("heading", { name: "My Monthly Feed", exact: true }).evaluate(heading => getComputedStyle(heading).color), "rgb(255, 255, 255)");
+    assert.equal(await page.getByRole("heading", { name: "Recent posts", exact: true }).count(), 0);
+    assert.equal(await page.locator("monthly-media").count(), 0);
+    assert.equal(await page.locator("input[type=password]").count(), 0);
+    assert.equal(await page.getByRole("button", { name: "Refresh posts", exact: true }).count(), 0);
+    assert.equal(await page.getByText("The current month and previous two months. Public and read-only; no sign-in needed.", { exact: true }).count(), 0);
+    assert.equal(await page.locator(".monthly-post-text").first().textContent(), text);
+    const timestamp = await page.locator("monthly-feed article").first().evaluate(article => {
+      const date = article.querySelector<HTMLTimeElement>(".monthly-post-date")!;
+      const message = article.querySelector(".monthly-post-text")!;
+      const style = getComputedStyle(date);
+      return {
+        datetime: date.dateTime,
+        smaller: parseFloat(style.fontSize) < parseFloat(getComputedStyle(message).fontSize),
+        muted: style.color !== getComputedStyle(message).color,
+        display: style.display, align: style.textAlign,
+        afterMedia: date.previousElementSibling?.classList.contains("monthly-post-media"),
+        beforeTags: date.nextElementSibling?.classList.contains("monthly-post-tags"),
+      };
+    });
+    assert.deepEqual(timestamp, { datetime: created, smaller: true, muted: true, display: "block", align: "right", afterMedia: true, beforeTags: true });
+    const tagStyle = await page.locator("monthly-feed article").first().evaluate(article => {
+      const date = getComputedStyle(article.querySelector(".monthly-post-date")!);
+      const tags = getComputedStyle(article.querySelector(".monthly-post-tags")!);
+      const tag = getComputedStyle(article.querySelector(".monthly-post-tags li")!);
+      return {
+        sameSize: tag.fontSize === date.fontSize, sameColor: tag.color === date.color,
+        align: tags.textAlign, justify: tags.justifyContent,
+        bordered: tag.borderTopStyle === "solid" && parseFloat(tag.borderTopWidth) === 1,
+        rounded: parseFloat(tag.borderTopLeftRadius) > 0,
+      };
+    });
+    assert.deepEqual(tagStyle, { sameSize: true, sameColor: true, align: "left", justify: "flex-start", bordered: true, rounded: true });
+    assert.equal(requests.length, 3);
+    assert.equal(warnings.length, 2);
+    assert.ok(warnings.some(message => message.includes("403")));
+    assert.ok(warnings.some(message => message.includes("404")));
+    assert.deepEqual(await page.locator(".monthly-feed-month-title time").evaluateAll(nodes => nodes.map(node => node.getAttribute("datetime"))), [month.replace("/", "-")]);
+    assert.equal(await page.locator("monthly-feed [role=status], monthly-feed [role=alert]").count(), 0);
+    assert.ok(requests.every(path => /^\/wp-content\/uploads\/\d{4}\/\d{2}\/posts\.json$/.test(path)));
+    for (const [width, columns] of [[2560, 3], [1440, 3], [1024, 2], [768, 1], [375, 1], [320, 1]] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      const layout = await page.locator(".monthly-feed-posts").evaluate(grid => ({
+        columns: getComputedStyle(grid).gridTemplateColumns.split(" ").length,
+        widths: Array.from(grid.children, card => card.getBoundingClientRect().width),
+        overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      }));
+      assert.equal(layout.columns, columns, `Column count at ${width}px`);
+      assert.equal(layout.overflow, false, `Horizontal overflow at ${width}px`);
+      assert.ok(layout.widths.every(cardWidth => cardWidth >= (columns > 1 ? 352 : 240) && cardWidth <= 700), `Readable post widths at ${width}px`);
+    }
+    text = "A newly published post";
+    historical = true;
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.reload();
+    await page.waitForFunction(text => document.querySelector(".monthly-post-text")?.textContent === text, text);
+    assert.equal(requests.length, 6);
+    assert.equal(warnings.length, 3);
+    const sections = page.locator(".monthly-feed-month");
+    assert.equal(await sections.count(), 2);
+    assert.deepEqual(await page.locator(".monthly-feed-month-title time").evaluateAll(nodes => nodes.map(node => node.getAttribute("datetime"))), [
+      month.replace("/", "-"), forbiddenMonth.replace("/", "-"),
+    ]);
+    assert.equal(await sections.first().locator("article").count(), 2);
+    assert.equal(await sections.last().locator("article").count(), 1);
+    const monthLayout = await sections.evaluateAll(nodes => nodes.map(section => {
+      const grid = section.querySelector(".monthly-feed-posts")!;
+      const heading = section.querySelector("h2")!;
+      const bounds = section.getBoundingClientRect();
+      return {
+        top: bounds.top, bottom: bounds.bottom,
+        columns: getComputedStyle(grid).gridTemplateColumns.split(" ").length,
+        headingWidth: heading.getBoundingClientRect().width, gridWidth: grid.getBoundingClientRect().width,
+      };
+    }));
+    assert.ok(monthLayout[1].top > monthLayout[0].bottom);
+    assert.ok(monthLayout.every(month => month.columns === 3 && Math.abs(month.headingWidth - month.gridWidth) < 1));
+    available = false;
+    await page.reload();
+    await page.waitForFunction(() => {
+      const state = document.querySelector("monthly-feed")?.observed?.state;
+      return state?.loaded && !state.loading && !state.posts.length;
+    });
+    assert.equal(await page.locator("monthly-feed [role=status], monthly-feed [role=alert]").count(), 0);
+    assert.equal(warnings.length, 6);
+    assert.deepEqual(appErrors, []);
+    assert.deepEqual(errors, []);
+  } finally {
     await browser?.close();
     await server.close();
   }

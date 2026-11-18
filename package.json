@@ -20,6 +20,7 @@
     "build:lambda": "npm run typecheck && tsx scripts/build-lambda.ts",
     "dev": "vite",
     "dev:aws": "vite --mode aws",
+    "dev:feed": "vite --mode feed",
     "fixtures:generate": "tsx scripts/generate-dev-assets.ts",
     "typecheck:watch": "tsc --noEmit --watch",
     "test": "tsx --test tests/*.test.ts",

@@ -2,8 +2,7 @@
 
 Small-scale media management for static sites, with a shared AWS Lambda,
 framework-independent TypeScript models, and lightweight Lit Web Components.
-Media management is implemented in this first pass. Microblog posting and a
-public month-organized feed are future features, not placeholder APIs.
+Includes media management, microblog posting, and a public month-organized feed.
 
 ## Run locally
 
@@ -39,6 +38,10 @@ Changes last until the dev server restarts; the JSON is never overwritten by
 uploads. Override the local-only login using `MONTHLY_DEV_USERNAME` and
 `MONTHLY_DEV_PASSWORD` in `.env.local` if needed (password: 16-1024 characters).
 
+The **Post** tab publishes updates using the same handler and simulated uploads.
+Monthly post JSON is held in memory locally and resets on restart. The demo
+shows a public feed below the manager, refreshed automatically after posting.
+
 Vite serves TypeScript directly, hot-updates CSS,
 and reloads the page automatically for TypeScript and HTML changes. Lit
 component changes use full-page reloads, so in-memory login and upload state
@@ -60,7 +63,7 @@ If `.env.local` already exists, edit it rather than replacing it with the
 example. Shell environment variables override the file. Restart the dev
 command after changing these values.
 
-Only these two public values are exposed to the demo (and embedded in
+Only these two public values are exposed to the manager demo (and embedded in
 `dist/config.js` by the production build);
 the reusable library and standalone `dist/monthly.js` remain unconfigured.
 Plain `npm run dev` ignores these AWS connection values and always uses mocks.
@@ -76,6 +79,30 @@ are not uploaded to Lambda and do not update its environment variables.
 For real AWS connections, API and S3 CORS must allow your
 frontend origin, including localhost when developing. The frontend may run
 on local HTTP, but API calls always use HTTPS.
+
+### View your deployed posts
+
+Add your public CDN URL **including the media prefix** to your existing
+`.env.local`:
+
+```dotenv
+MONTHLY_FEED_URL=https://your-distribution.cloudfront.net/wp-content/uploads/
+```
+
+Then run:
+
+```sh
+npm run dev:feed
+```
+
+Open `http://localhost:8080` for the standalone, read-only feed demo. It reads
+real public monthly JSON from your CDN, without login, API Gateway calls, or
+local mocks. API URL and bucket settings are not required for this command.
+All demo modes use port 8080; stop the posting server before starting the feed
+server. Vite fails if the port is occupied rather than switching to another port.
+Reload the page after publishing to see new posts. Restart Vite after
+changing the URL. If CDN CORS restricts origins, allow `http://localhost:8080`.
+No changes to `.env.local` are made automatically.
 
 ## Embed in a site
 
@@ -122,6 +149,82 @@ element in a `/media/` template. Its layout should remain private: `noindex`,
 `no-referrer`, no analytics, and exclusion from Pagefind. The consumer owns its
 page shell, branding, navigation, deployment, and configuration.
 
+## Microblog posts and public feed
+
+Sign in to `<monthly-media>` and use **Post** to write a message, enter optional
+comma-separated tags, and choose media. Publishing uploads the media using the
+existing uploader, then saves the post. Text-only and media-only updates work.
+Messages support up to 4000 characters, 32 tags of up to 64 characters each, and
+20 media assets. Messages render as plain text, not HTML or Markdown.
+
+Hashtags remain in the message and are also merged with explicit tags. Tags
+are Unicode-normalized, lowercased, and deduplicated; hashtags support letters,
+numbers, and underscores. Posting always uses the **current UTC month**, with
+no month picker. The ordinary Upload tab retains its existing month picker.
+Uploads keep the existing filenames, supported types, limits, and replacement
+behavior, so reusing a filename can also change media referenced by an old post.
+
+Each month stores a JSON array at `<prefix>YYYY/MM/posts.json`, beside its media:
+
+```json
+[
+  {
+    "id": "6e809217-28d0-41bd-b722-4fc7b552486a",
+    "created": "2026-11-17T12:00:00.000Z",
+    "text": "A morning walk #outside",
+    "tags": ["outside"],
+    "media": [
+      {
+        "key": "media/2026/11/walk.jpg",
+        "url": "https://cdn.example.com/media/2026/11/walk.jpg",
+        "size": 123456
+      }
+    ]
+  }
+]
+```
+
+The Lambda reads the monthly file (or creates it if absent), appends the post,
+and saves it using conditional S3 writes. Conflicting writes are retried.
+Post IDs make retries idempotent. A failed JSON save leaves uploaded assets in
+place; **Retry post** retries the same post without another upload. While a save
+is uncertain, the draft is locked to avoid changing that retry. **New post**
+discards the local draft without deleting uploaded media or a possibly saved post.
+A post that crosses a UTC month boundary must be restarted.
+
+Place a separate **public**, login-free feed on any page, including an Eleventy
+template, using the same script and stylesheet:
+
+```html
+<monthly-feed base-url="https://cdn.example.com/media/"></monthly-feed>
+```
+
+The feed uses a responsive card grid: one column by default, two when its
+container reaches 46rem, and a maximum of three at 70rem. Column counts follow
+the component's available width, so embedded feeds also adapt to narrower layouts.
+Each month with posts has a full-width month/year heading and its own grid,
+with the newest month first. Posts from different months never share a row.
+
+`base-url` includes your configured media prefix, not just the CDN origin.
+The feed requests exactly the current UTC month and the preceding two calendar
+months, including across year boundaries; it does not search older months to
+replace missing ones. It skips 404s and sorts posts newest-first. Missing files
+and other fetch or JSON failures are logged with `console.warn`, not displayed
+in the feed UI. Non-404 failures remain available in the model's `state.errors`
+for diagnostics. Browsers may still show their own HTTP/network error entries;
+frontend JavaScript cannot suppress those.
+Requests send no credentials. Cross-origin JSON reads need CORS on the CDN;
+see the [AWS guide](lambda/README.md#public-post-json-and-caching).
+
+Headless consumers can use `PostComposer` (with an authenticated `MediaApi`)
+and `PostFeed({ baseUrl })` from the core entrypoint. Both expose observable
+state. Call `feed.load()` to refresh and `destroy()` when finished. The manager
+owns `controller.composer`; `<monthly-post .model=${composer}>` provides a
+standalone composer view. `<monthly-feed>` also accepts a `.model` property.
+The composer view emits a bubbling `monthly-posted` event with the saved post
+in `event.detail`; consumers can refresh a feed in response. Externally supplied
+models remain caller-owned.
+
 ## Independent logic
 
 `@bengfarrell/monthly/core` does not import Lit, HTML, CSS, or register elements.
@@ -158,6 +261,8 @@ media.destroy();
 | `MediaLibrary` | Month filtering, pagination, loading state and stale-request cancellation |
 | `MediaUploader` | File validation, queue/progress, signed single/multipart uploads and cancellation |
 | `MediaController` | Compose the models, sign-in/out, tab and upload-session state |
+| `PostComposer` | Current-month posts, hashtag extraction, upload-before-save and retry state |
+| `PostFeed` | Public three-calendar-month JSON loading and newest-first ordering |
 | `copyMediaUrl` | Clipboard operation independent of the view |
 | Shared helpers | Media types, size formatting, month and URL validation |
 
@@ -223,6 +328,8 @@ on the document or a surrounding element.
 | `<monthly-library>` | `.model` property containing a `MediaLibrary` |
 | `<monthly-upload>` | `.model` property containing a `MediaUploader` |
 | `<monthly-asset>` | `.item` property (`key`, `url`, `size`), optional `.preview = false` |
+| `<monthly-post>` | `.model` property containing a `PostComposer` |
+| `<monthly-feed>` | `base-url` attribute including the public media prefix, or `.model` |
 
 Use `<monthly-media>` for the complete manager or compose the smaller views.
 An externally supplied controller remains owned by its caller; unmounting the
@@ -249,8 +356,9 @@ managers; the app does not persist credentials in storage or cookies.
 
 ## Backend
 
-The ported handler remains compatible with the deployed API and existing upload
-grants. Its routes and Lambda environment variables have not changed.
+The handler remains compatible with the existing media routes and upload
+grants. Posting adds `POST /posts` and requires S3 read permission for the
+monthly JSON files; Lambda environment variables have not changed.
 
 ```sh
 npm run build:lambda
