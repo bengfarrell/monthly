@@ -164,6 +164,43 @@ no month picker. The ordinary Upload tab retains its existing month picker.
 Uploads keep the existing filenames, supported types, limits, and replacement
 behavior, so reusing a filename can also change media referenced by an old post.
 
+Videos are decoded locally before uploading. If the current browser cannot
+decode a video or capture its poster, uploading is blocked; remove it or convert
+it to a supported format first. This checks the uploader's browser, not every
+viewer's codec support, and does not validate every frame of the video.
+The original video is never transcoded. A default frame is selected near the
+start; use the queued video's **Poster frame** slider to choose another.
+The JPEG poster is scaled to at most 1280 pixels on its longest side and uploaded
+alongside the original. It does not count toward the 20 assets or appear as a
+separate attachment.
+
+Images **over 1 MiB** default to creating a JPEG thumbnail with a **960-pixel
+longest edge**. Smaller images can opt in. The queued image's controls allow
+320-2048 pixels or disabling the thumbnail; resizing preserves aspect ratio and
+never upscales. Transparent areas become white. Generated JPEGs use quality 0.82
+and must fit within 1 MiB; choose a smaller size if capture exceeds that limit.
+The original image is uploaded unchanged. A selected image thumbnail must decode
+and capture successfully, or be explicitly disabled; disabling uses the original
+in previews and does not prevent uploading an image the browser cannot decode.
+
+Media entries use optional **`thumbnails`**, keyed by actual pixel dimensions,
+with `{ key, url, size, time? }` file values. `time` is a video frame's position
+in seconds. Maps accept up to 20 thumbnails in insertion order, although the
+current upload controls create one per original. The library and feed use
+**only the first thumbnail**: as the image source or video's poster. Links still
+point to originals. Old posts without thumbnails, including legacy `poster`
+entries, remain supported.
+
+Dimension-specific JPEGs use reserved `<media-key>.thumb-<width>x<height>.jpg`
+filenames. After uploading the original and thumbnail, the uploader saves the
+association in `<prefix>YYYY/MM/thumbnails.json`. Completion and publishing wait
+for that save. A failed thumbnail-index save is visible and retryable without
+re-uploading successful media. Disabling thumbnails saves an empty association,
+so replacing an original cannot accidentally reuse obsolete companions.
+The index and companion files are hidden from library listings; obsolete files
+are not deleted. Deploy the updated Lambda, add **`POST /thumbnails`**, and grant
+index read permission before deploying the frontend; see the [AWS guide](lambda/README.md).
+
 Each month stores a JSON array at `<prefix>YYYY/MM/posts.json`, beside its media:
 
 ```json
@@ -177,7 +214,14 @@ Each month stores a JSON array at `<prefix>YYYY/MM/posts.json`, beside its media
       {
         "key": "media/2026/11/walk.jpg",
         "url": "https://cdn.example.com/media/2026/11/walk.jpg",
-        "size": 123456
+        "size": 2345678,
+        "thumbnails": {
+          "960x540": {
+            "key": "media/2026/11/walk.jpg.thumb-960x540.jpg",
+            "url": "https://cdn.example.com/media/2026/11/walk.jpg.thumb-960x540.jpg",
+            "size": 65432
+          }
+        }
       }
     ]
   }
@@ -191,6 +235,39 @@ place; **Retry post** retries the same post without another upload. While a save
 is uncertain, the draft is locked to avoid changing that retry. **New post**
 discards the local draft without deleting uploaded media or a possibly saved post.
 A post that crosses a UTC month boundary must be restarted.
+
+### Edit a month's posts JSON
+
+On **Browse**, select a single month and choose **Edit posts.json**. The editor
+loads that month's existing file directly from S3 through the authenticated API,
+not a possibly cached CDN copy. Edit the JSON in place; syntax, post fields,
+timestamps, unique IDs, media keys/URLs, thumbnail maps and legacy posters are validated as you
+type and again on the server. Invalid JSON can be loaded for repair, but cannot
+be saved. Files up to **512 KiB (UTF-8)** are supported.
+
+**Save posts.json** replaces the whole file exactly as edited, preserving
+formatting and additional fields. You can change, reorder or remove posts,
+including in past months. Additional fields are retained when new posts are
+appended too. Timestamps and media must still belong to that month,
+and media URLs must match their object keys on the configured CDN. Saving `[]`
+removes all posts from that month without deleting any uploaded media.
+Missing files produce an explicit error; this editor does not create new ones.
+
+Changes must be saved or explicitly discarded before switching months or
+signing out. **Reload posts.json** fetches the latest version after discarding
+local changes. An S3 ETag guards every save: if another editor or a new post
+changes the file, saving reports a conflict and keeps your edits instead of
+overwriting it. Copy your edits before discarding and reloading to reconcile
+them. Network/storage errors also preserve the draft. As with other drafts,
+reloading or closing the page loses unsaved edits.
+
+The model is `controller.postsEditor`, or construct `PostsEditor(api, { month })`
+from the core entrypoint. `<monthly-posts-editor .model=${editor}>` is a standalone
+view; `<monthly-library>` accepts an `.editor` alongside its `.model`.
+Successful saves emit a bubbling `monthly-posts-saved` event with
+`{ month, file }` in `event.detail`; refresh a public feed in response. The local
+demo does this automatically. Deploy the updated Lambda and add its two editor
+routes before deploying the frontend; see the [AWS guide](lambda/README.md).
 
 Place a separate **public**, login-free feed on any page, including an Eleventy
 template, using the same script and stylesheet:
@@ -230,6 +307,12 @@ models remain caller-owned.
 `@bengfarrell/monthly/core` does not import Lit, HTML, CSS, or register elements.
 It can back another UI framework, custom DOM code, or application logic.
 The upload adapter uses headless Uppy Core/AWS-S3, not Uppy Dashboard.
+`MediaUploader.ready()` waits for video preparation and rejects undecodable
+videos; `upload()` also performs this check automatically.
+`selectPoster(fileId, seconds)` selects a new frame before uploading.
+Video preparation requires browser DOM/media APIs; other upload types remain
+usable without them. Custom browser UIs can read `QueuedFile.video` for poster
+previews, duration, selection and preparation status.
 
 ```js
 import { MediaController } from "@bengfarrell/monthly/core";

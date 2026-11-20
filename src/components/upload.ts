@@ -58,6 +58,32 @@ export class MonthlyUpload extends LitElement {
         ${repeat(state.files, file => file.id, file => html`<li>
           <div class="monthly-queued-file"><strong>${file.name}</strong><span>${formatBytes(file.size)}</span></div>
           <wa-progress-bar .value=${file.progress} label=${`Upload progress for ${file.name}`}></wa-progress-bar>
+          ${file.video ? html`<div class="monthly-poster-picker">
+            ${file.video.posterUrl ? html`<img class="monthly-poster-preview" src=${file.video.posterUrl} alt=${`Poster frame for ${file.name}`}>` : nothing}
+            ${file.video.duration ? html`<label>Poster frame for ${file.name}
+              <input type="range" min="0" max=${Math.max(0, file.video.duration - 0.001)} step="0.001"
+                .value=${String(file.video.time)} ?disabled=${disabled || file.video.checking || !file.video.editable}
+                @change=${(event: Event) => model.selectPoster(file.id, Number((event.target as HTMLInputElement).value))}>
+            </label><span>${file.video.time.toFixed(2)}s</span>` : nothing}
+            ${file.video.checking ? html`<p role="status">Checking video and preparing its poster...</p>` : nothing}
+          </div>` : nothing}
+          ${file.image ? html`<div class="monthly-poster-picker monthly-thumbnail-settings">
+            <label class="monthly-thumbnail-toggle"><input type="checkbox" .checked=${file.image.enabled}
+              ?disabled=${disabled || !file.image.editable} @change=${(event: Event) =>
+                model.configureImageThumbnail(file.id, (event.target as HTMLInputElement).checked, file.image!.maxDimension)}>
+              Create thumbnail for ${file.name}</label>
+            ${file.image.enabled ? html`
+              <label>Thumbnail longest edge for ${file.name}
+                <input type="number" min="320" max="2048" step="1" .value=${String(file.image.maxDimension)}
+                  ?disabled=${disabled || file.image.checking || !file.image.editable}
+                  @change=${(event: Event) => model.configureImageThumbnail(file.id, true, Number((event.target as HTMLInputElement).value))}>
+              </label>
+              <p class="monthly-description">Suggested: 960 pixels. Keeps the aspect ratio and never enlarges the original.</p>
+              ${file.image.thumbnailUrl ? html`<img class="monthly-poster-preview" src=${file.image.thumbnailUrl} alt=${`Thumbnail for ${file.name}`}>
+                <span>${file.image.dimensions}</span>` : nothing}
+              ${file.image.checking ? html`<p role="status">Preparing image thumbnail...</p>` : nothing}
+            ` : html`<p class="monthly-description">Without a thumbnail, previews use the original image.</p>`}
+          </div>` : nothing}
           ${file.error ? html`<span class="monthly-error">${file.error}</span>` : nothing}
           ${file.complete ? html`<wa-badge variant="success" pill>Uploaded</wa-badge>` : nothing}
           <wa-button class="monthly-button" size="s" type="button" ?disabled=${disabled} @click=${() => model.removeFile(file.id)}>
@@ -66,7 +92,7 @@ export class MonthlyUpload extends LitElement {
         </li>`)}
       </ul>
       <div class="monthly-upload-actions" ?hidden=${this.posting && !state.uploading}>
-        <wa-button class="monthly-button" variant="brand" type="button" ?hidden=${this.posting} ?disabled=${disabled || !state.files.some(file => !file.complete)} ?loading=${state.uploading} @click=${() => model.upload()}>Upload files</wa-button>
+        <wa-button class="monthly-button" variant="brand" type="button" ?hidden=${this.posting} ?disabled=${disabled || state.files.some(file => file.video?.checking || file.image?.checking) || !state.files.some(file => !file.complete)} ?loading=${state.uploading} @click=${() => model.upload()}>Upload files</wa-button>
         <wa-button class="monthly-button" type="button" ?disabled=${!state.files.length} @click=${() => model.cancel()}>Cancel uploads</wa-button>
       </div>
       <wa-callout class="monthly-upload-status" variant=${state.uploading ? "brand" : "neutral"} role="status">

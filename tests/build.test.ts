@@ -19,7 +19,7 @@ test("package exports provide JavaScript modules and strict consumer declaration
   try {
     const filename = join(directory, "consumer.ts");
     writeFileSync(filename, `
-      import { MediaController, PostFeed, PostComposer, Store, type Post, type MediaItem, type ControllerState } from "@bengfarrell/monthly/core";
+      import { MediaController, PostFeed, PostComposer, PostsEditor, Store, type Post, type MediaItem, type ControllerState } from "@bengfarrell/monthly/core";
       import type { MonthlyMedia } from "@bengfarrell/monthly/components";
       import type { MediaUploaderOptions } from "@bengfarrell/monthly";
       const controller = new MediaController({ apiUrl: "https://api.example.com", bucket: "example-bucket" });
@@ -32,6 +32,8 @@ test("package exports provide JavaScript modules and strict consumer declaration
       feed.subscribe(state => state.posts.map((post: Post) => post.text));
       document.createElement("monthly-feed").model = feed;
       document.createElement("monthly-post").model = new PostComposer(controller.api);
+      document.createElement("monthly-posts-editor").model = new PostsEditor(controller.api, { month: "2026-11" });
+      document.createElement("monthly-library").editor = controller.postsEditor;
       const options: MediaUploaderOptions = { month: "2026-11" };
       const store = new Store({ count: 0 });
       store.setState({ count: 1 });

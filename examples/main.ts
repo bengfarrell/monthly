@@ -14,4 +14,5 @@ if (process.env.MONTHLY_DEV_MODE === "mock") {
   feed.baseUrl = `${location.origin}/mock-assets/`;
   manager.after(feed);
   manager.addEventListener("monthly-posted", () => { void feed.observed?.load(); });
+  manager.addEventListener("monthly-posts-saved", () => { void feed.observed?.load(); });
 }

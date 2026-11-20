@@ -6,10 +6,11 @@ import {
   type ListObjectsV2CommandOutput,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { MEDIA_TYPES as TYPES, isRecord, mediaType, MAX_FILE_SIZE, PART_SIZE } from "../src/shared/media-types.js";
+import { MEDIA_TYPES as TYPES, isRecord, mediaType, mediaUrl, MAX_FILE_SIZE, PART_SIZE, THUMBNAILS_FILE, isVideoPoster, isMediaThumbnail, posterKey, thumbnailKey, readThumbnails, validateFile, validateThumbnails, uploadFilename, type Thumbnails } from "../src/shared/media-types.js";
 import { asError } from "../src/shared/errors.js";
-import { POSTS_FILE, readPosts, validatePostInput, type Post } from "../src/shared/posts.js";
+import { POSTS_FILE, MAX_POSTS_FILE_BYTES, readPosts, validatePostInput, validatePostMediaKeys, validatePostsJson, validatePostsFileSize, validatePostsEtag, type Post } from "../src/shared/posts.js";
 export { MAX_FILE_SIZE, PART_SIZE };
+export { mediaUrl };
 
 const GRANT_LIFETIME = 24 * 60 * 60;
 
@@ -62,12 +63,29 @@ export function monthPrefix(month: unknown, prefix: string) {
   if (typeof month !== "string" || !/^[1-9]\d{3}-(0[1-9]|1[0-2])$/.test(month)) reject("Month must use YYYY-MM.");
   return `${prefix}${month.replace("-", "/")}/`;
 }
-export function mediaUrl(base: string, key: string) { return `${base}/${key.split("/").map(encodeURIComponent).join("/")}`; }
 function json(statusCode: number, value: unknown) {
   return { statusCode, headers: { "content-type": "application/json", "cache-control": "no-store" }, body: JSON.stringify(value) };
 }
+export function requestBodyLimit(routeKey: string | undefined) {
+  return routeKey === "POST /posts/edit" ? MAX_POSTS_FILE_BYTES * 6 + 8192 :
+    routeKey === "POST /posts" ? 256 * 1024 : routeKey === "POST /thumbnails" ? 65536 : 8192;
+}
+function canonicalThumbnails(value: unknown, key: string, base: string): Thumbnails {
+  validateThumbnails(value, key);
+  return Object.fromEntries(Object.entries(value).map(([dimensions, file]) =>
+    [dimensions, { key: file.key, size: file.size, url: mediaUrl(base, file.key), ...(file.time !== undefined && { time: file.time }) }]));
+}
+function readThumbnailIndex(value: unknown, folder: string, base: string): Record<string, Thumbnails> {
+  if (!isRecord(value)) throw new Error("Invalid monthly thumbnails file.");
+  return Object.fromEntries(Object.entries(value).map(([key, files]) => {
+    validatePostMediaKeys([{ key, size: 1 }], folder);
+    const thumbnails = readThumbnails(files, key);
+    if (Object.values(thumbnails).some(file => file.url !== mediaUrl(base, file.key))) throw new Error("Invalid thumbnail CDN URL.");
+    return [key, thumbnails];
+  }));
+}
 function parseBody(event: MediaEvent): Record<string, unknown> {
-  const limit = event.routeKey === "POST /posts" ? 65536 : 8192;
+  const limit = requestBodyLimit(event.routeKey);
   if (event.isBase64Encoded || typeof event.body !== "string" || Buffer.byteLength(event.body) > limit) reject("Expected a small JSON request.");
   let body: unknown;
   try { body = JSON.parse(event.body); }
@@ -179,13 +197,119 @@ export function createHandler({ clientForRegion, sign = signUpload, config, now 
         const result = await getClient(region).send(new ListObjectsV2Command({
           Bucket: bucket, Prefix: listPrefix, MaxKeys: 50, ContinuationToken: query.cursor || undefined,
         }));
+        const contents = result.Contents || [];
+        const visible = contents.filter((item): item is typeof item & { Key: string } =>
+          !!item.Key && !item.Key.endsWith("/") && !item.Key.endsWith(`/${POSTS_FILE}`) &&
+          !item.Key.endsWith(`/${THUMBNAILS_FILE}`) && !isVideoPoster(item.Key) && !isMediaThumbnail(item.Key),
+        );
+        const folders = [...new Set(visible.filter(item => /^(image|video)\//.test(mediaType(item.Key) ?? ""))
+          .map(item => item.Key.slice(0, item.Key.lastIndexOf("/") + 1)))];
+        const indices = new Map<string, Record<string, Thumbnails>>(await Promise.all(folders.map(async folder => {
+          try {
+            const object = await getClient(region).send(new GetObjectCommand({ Bucket: bucket, Key: `${folder}${THUMBNAILS_FILE}` }));
+            if (!object.Body) throw new Error("Monthly thumbnails object is missing its body.");
+            return [folder, readThumbnailIndex(JSON.parse(await object.Body.transformToString()), folder, publicBaseUrl)] as const;
+          } catch (error) {
+            if (error instanceof Error && error.name === "NoSuchKey") return [folder, {}] as const;
+            throw error;
+          }
+        })));
+        const items = await Promise.all(visible.map(async item => {
+          const folder = item.Key.slice(0, item.Key.lastIndexOf("/") + 1);
+          const thumbnails = indices.get(folder)?.[item.Key];
+          let poster;
+          if (thumbnails === undefined && mediaType(item.Key)?.startsWith("video/")) {
+            const key = posterKey(item.Key);
+            // A companion may be on a different library page.
+            const companion = contents.find(candidate => candidate.Key === key) ??
+              (await getClient(region).send(new ListObjectsV2Command({ Bucket: bucket, Prefix: key, MaxKeys: 1 }))).Contents?.find(candidate => candidate.Key === key);
+            if (companion) {
+              if (typeof companion.Size !== "number" || companion.Size < 1) throw new Error("Video poster size is missing.");
+              poster = { key, size: companion.Size, url: mediaUrl(publicBaseUrl, key) };
+            }
+          }
+          return { key: item.Key, size: item.Size, modified: item.LastModified?.toISOString(), url: mediaUrl(publicBaseUrl, item.Key),
+            ...(poster && { poster }), ...(thumbnails !== undefined && { thumbnails }) };
+        }));
         return json(200, {
-          bucket,
-          items: (result.Contents || []).filter((item): item is typeof item & { Key: string } => !!item.Key && !item.Key.endsWith("/") && !item.Key.endsWith(`/${POSTS_FILE}`)).map(item => ({
-            key: item.Key, size: item.Size, modified: item.LastModified?.toISOString(), url: mediaUrl(publicBaseUrl, item.Key),
-          })),
+          bucket, items,
           cursor: result.IsTruncated ? result.NextContinuationToken : null,
         });
+      }
+      if (route === "POST /thumbnails") {
+        const body = parseBody(event);
+        const { bucket, prefix, publicBaseUrl, region } = destination(body.bucket);
+        const folder = monthPrefix(body.month, prefix);
+        if (typeof body.key !== "string") reject("A media key is required.");
+        let thumbnails: Thumbnails;
+        try {
+          validatePostMediaKeys([{ key: body.key, size: 1 }], folder);
+          thumbnails = canonicalThumbnails(body.thumbnails, body.key, publicBaseUrl);
+        } catch (error) { reject(asError(error).message); }
+        const client = getClient(region);
+        const input = { Bucket: bucket, Key: `${folder}${THUMBNAILS_FILE}` };
+        for (let attempt = 0; attempt < 5; attempt++) {
+          let index: Record<string, Thumbnails> = {};
+          let etag: string | undefined;
+          try {
+            const object = await client.send(new GetObjectCommand(input));
+            if (!object.Body || !object.ETag) throw new Error("Monthly thumbnails object is missing its body or ETag.");
+            index = readThumbnailIndex(JSON.parse(await object.Body.transformToString()), folder, publicBaseUrl);
+            etag = object.ETag;
+          } catch (error) {
+            if (!(error instanceof Error) || error.name !== "NoSuchKey") throw error;
+          }
+          try {
+            await client.send(new PutObjectCommand({ ...input, Body: JSON.stringify({ ...index, [body.key]: thumbnails }),
+              ContentType: "application/json", CacheControl: "no-cache", ...(etag ? { IfMatch: etag } : { IfNoneMatch: "*" }) }));
+            return json(200, { bucket, key: body.key, thumbnails });
+          } catch (error) {
+            if (!(error instanceof Error) || !["PreconditionFailed", "ConditionalRequestConflict"].includes(error.name)) throw error;
+          }
+        }
+        throw new HttpError(409, "The monthly thumbnails file changed repeatedly. Retry the upload to save its thumbnails.");
+      }
+      if (route === "GET /posts") {
+        const query = event.queryStringParameters || {};
+        const { bucket, prefix, publicBaseUrl, region } = destination(query.bucket);
+        const key = `${monthPrefix(query.month, prefix)}${POSTS_FILE}`;
+        try {
+          const object = await getClient(region).send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+          if (!object.Body || !object.ETag) throw new Error("Monthly posts object is missing its body or ETag.");
+          const content = await object.Body.transformToString();
+          try { validatePostsFileSize(content); }
+          catch (error) { throw new HttpError(413, asError(error).message); }
+          return json(200, { bucket, key, url: mediaUrl(publicBaseUrl, key), etag: object.ETag, content });
+        } catch (error) {
+          if (error instanceof Error && error.name === "NoSuchKey") throw new HttpError(404, `No ${POSTS_FILE} exists for ${query.month}.`);
+          throw error;
+        }
+      }
+      if (route === "POST /posts/edit") {
+        const body = parseBody(event);
+        const { bucket, prefix, publicBaseUrl, region } = destination(body.bucket);
+        const month = body.month;
+        if (typeof month !== "string") reject("Month must use YYYY-MM.");
+        const key = `${monthPrefix(month, prefix)}${POSTS_FILE}`;
+        const url = mediaUrl(publicBaseUrl, key);
+        if (typeof body.content !== "string") reject("Expected the edited JSON file as text.");
+        try {
+          validatePostsEtag(body.etag);
+          validatePostsJson(body.content, month, { key, url });
+        } catch (error) { reject(asError(error).message); }
+        try {
+          const result = await getClient(region).send(new PutObjectCommand({
+            Bucket: bucket, Key: key, Body: body.content, IfMatch: body.etag,
+            ContentType: "application/json", CacheControl: "no-cache",
+          }));
+          if (!result.ETag) throw new Error("The saved posts file is missing its ETag. Reload it before editing again.");
+          return json(200, { bucket, key, url, etag: result.ETag, content: body.content });
+        } catch (error) {
+          if (error instanceof Error && ["PreconditionFailed", "ConditionalRequestConflict", "NoSuchKey"].includes(error.name)) {
+            throw new HttpError(409, "The posts file changed or was removed. Copy your edits, then discard changes and reload before saving again.");
+          }
+          throw error;
+        }
       }
       if (route === "POST /posts") {
         const body = parseBody(event);
@@ -196,12 +320,15 @@ export function createHandler({ clientForRegion, sign = signUpload, config, now 
         const month = date.toISOString().slice(0, 7);
         if (body.month !== month) reject("Posts must use the current UTC month. Start a new post after the month changes.");
         const folder = monthPrefix(month, prefix);
+        try { validatePostMediaKeys(body.media, folder); }
+        catch (error) { reject(asError(error).message); }
         const media = body.media.map(item => {
-          const filename = item.key.slice(folder.length);
-          if (!item.key.startsWith(folder) || !/^[a-zA-Z0-9_-][a-zA-Z0-9._-]{0,159}$/.test(filename)) {
-            reject("Post media must belong to the current month.");
-          }
-          return { key: item.key, size: item.size, url: mediaUrl(publicBaseUrl, item.key) };
+          return { key: item.key, size: item.size, url: mediaUrl(publicBaseUrl, item.key),
+            ...(item.poster && { poster: {
+              key: item.poster.key, size: item.poster.size, url: mediaUrl(publicBaseUrl, item.poster.key),
+              ...(item.poster.time !== undefined && { time: item.poster.time }),
+            } }),
+            ...(item.thumbnails !== undefined && { thumbnails: canonicalThumbnails(item.thumbnails, item.key, publicBaseUrl) }) };
         });
         const post: Post = {
           id: body.id, text: body.text.trim(), tags: [...new Set(body.tags.map(tag => tag.trim()))],
@@ -211,11 +338,15 @@ export function createHandler({ clientForRegion, sign = signUpload, config, now 
         const input = { Bucket: bucket, Key: `${folder}${POSTS_FILE}` };
         for (let attempt = 0; attempt < 5; attempt++) {
           let posts: Post[] = [];
+          let storedPosts: unknown[] = [];
           let etag: string | undefined;
           try {
             const object = await client.send(new GetObjectCommand(input));
             if (!object.Body || !object.ETag) throw new Error("Monthly posts object is missing its body or ETag.");
-            posts = readPosts(JSON.parse(await object.Body.transformToString()), month);
+            const value: unknown = JSON.parse(await object.Body.transformToString());
+            if (!Array.isArray(value)) throw new Error("Invalid monthly posts file.");
+            posts = readPosts(value, month);
+            storedPosts = value;
             etag = object.ETag;
           } catch (error) {
             if (!(error instanceof Error) || error.name !== "NoSuchKey") throw error;
@@ -229,7 +360,7 @@ export function createHandler({ clientForRegion, sign = signUpload, config, now 
           }
           try {
             await client.send(new PutObjectCommand({
-              ...input, Body: JSON.stringify([...posts, post]), ContentType: "application/json",
+              ...input, Body: JSON.stringify([...storedPosts, post]), ContentType: "application/json",
               CacheControl: "no-cache", ...(etag ? { IfMatch: etag } : { IfNoneMatch: "*" }),
             }));
             return json(201, { bucket, post, url: mediaUrl(publicBaseUrl, input.Key) });
@@ -246,10 +377,15 @@ export function createHandler({ clientForRegion, sign = signUpload, config, now 
         if (typeof body.size !== "number" || !Number.isSafeInteger(body.size) || body.size < 1 || body.size > MAX_FILE_SIZE) reject("Files must be between 1 byte and 2 GiB.");
         const type = mediaType(body.name);
         if (!type || body.type !== type) reject("Unsupported image/audio/video type or filename extension.");
+        try { validateFile(body); }
+        catch (error) { reject(asError(error).message); }
+        if ([body.posterFor, body.thumbnailFor].some(name => typeof name === "string" && name.length > 255)) reject("Invalid original filename.");
         const date = now();
         const folder = monthPrefix(body.month || date.toISOString().slice(0, 7), prefix);
-        const filename = body.name.split(/[\\/]/).at(-1)!.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/^\.+/, "").slice(-160);
-        const key = `${folder}${filename}`;
+        const key = typeof body.thumbnailFor === "string" && typeof body.dimensions === "string" ?
+          thumbnailKey(`${folder}${uploadFilename(body.thumbnailFor)}`, body.dimensions) :
+          typeof body.posterFor === "string" ? posterKey(`${folder}${uploadFilename(body.posterFor)}`) :
+          `${folder}${uploadFilename(body.name)}`;
         const ticket = createGrant({
           bucket, prefix, region, key, size: body.size, type, sub: "owner",
           exp: Math.floor(date.getTime() / 1000) + GRANT_LIFETIME,

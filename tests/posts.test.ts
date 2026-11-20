@@ -5,7 +5,7 @@ import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { createHandler, type MediaEvent, type MediaS3Client } from "../lambda/handler.js";
 import { MockS3 } from "../dev/mock-s3.js";
 import { LOCAL_BUCKET, LOCAL_PREFIX } from "../dev/fixtures.js";
-import { MediaApi, MediaAuth, MediaUploader, PostComposer, PostFeed, feedMonths, postTags, readPosts } from "../src/core/index.js";
+import { MediaApi, MediaAuth, MediaUploader, PostComposer, PostFeed, feedMonths, postTags, readPosts, thumbnailKey, thumbnailInputs } from "../src/core/index.js";
 import type { Post, PostInput } from "../src/core/index.js";
 
 const now = () => new Date("2026-01-15T12:00:00.000Z");
@@ -14,7 +14,10 @@ const key = `${LOCAL_PREFIX}2026/01/posts.json`;
 const asset = { key: `${LOCAL_PREFIX}2026/01/photo.png`, size: 12, url: `https://cdn.example.com/${LOCAL_PREFIX}2026/01/photo.png` };
 const input = (): PostInput => ({ id: randomUUID(), text: "An update #Hello", tags: ["hello", "photo"], media: [asset] });
 const saved = (draft: PostInput, created = now().toISOString()): Post => ({
-  ...draft, media: draft.media.map(item => ({ ...item, url: asset.url })), created,
+  ...draft, media: draft.media.map(({ poster, thumbnails, ...item }) => ({ ...item, url: asset.url,
+    ...(poster && { poster: { ...poster, url: `https://cdn.example.com/${poster.key}` } }),
+    ...(thumbnails !== undefined && { thumbnails: Object.fromEntries(Object.entries(thumbnails).map(([dimensions, file]) =>
+      [dimensions, { ...file, url: `https://cdn.example.com/${file.key}` }])) }) })), created,
 });
 const post = (date = now().toISOString()): Post => saved(input(), date);
 const config = {
@@ -70,6 +73,52 @@ test("posting creates then appends to the same month JSON with canonical media U
   assert.ok(writes[1].input.IfMatch);
   assert.equal(writes[0].input.ContentType, "application/json");
   assert.equal(writes[0].input.CacheControl, "no-cache");
+});
+
+test("post JSON preserves video posters, canonicalizes their URLs and keeps retries idempotent", async () => {
+  const { handle, s3 } = setup();
+  const video = { key: `${LOCAL_PREFIX}2026/01/clip.mp4`, size: 123 };
+  const draft = { ...input(), media: [{ ...video,
+    poster: { key: `${video.key}.poster.jpg`, size: 45, time: 0.75, url: "https://untrusted.example/poster.jpg" },
+  }] };
+  const response = await handle(event(draft));
+  assert.equal(response.statusCode, 201);
+  const saved = JSON.parse(response.body).post;
+  assert.equal(saved.media.length, 1);
+  assert.deepEqual(saved.media[0].poster, {
+    key: `${video.key}.poster.jpg`, size: 45, time: 0.75, url: `https://cdn.example.com/${video.key}.poster.jpg`,
+  });
+  assert.deepEqual(readPosts(JSON.parse(s3.documents.get(key)!.body), month), [saved]);
+  assert.equal((await handle(event(draft))).statusCode, 200);
+  for (const override of [
+    { key: `${LOCAL_PREFIX}2025/12/clip.mp4.poster.jpg` }, { key: `${LOCAL_PREFIX}2026/01/other.mp4.poster.jpg` },
+    { size: 0 }, { time: -1 }, { time: "1" },
+  ]) {
+    assert.equal((await handle(event({ ...input(), media: [{ ...video, poster: { ...draft.media[0].poster, ...override } }] }))).statusCode, 400);
+  }
+  assert.throws(() => readPosts([{ ...saved, media: [{ ...saved.media[0], poster: { ...saved.media[0].poster, url: "javascript:bad" } }] }], month), /HTTPS/);
+});
+
+test("post JSON and the API preserve ordered image thumbnail maps and idempotent retries", async () => {
+  const { handle, s3 } = setup();
+  const thumbnails = Object.fromEntries(["600x300", "960x480"].map(dimensions => [dimensions, {
+    key: thumbnailKey(asset.key, dimensions), size: 45, url: "https://untrusted.example/thumbnail.jpg",
+  }]));
+  const draft = { ...input(), media: [{ ...asset, thumbnails }] };
+  const response = await handle(event(draft));
+  assert.equal(response.statusCode, 201);
+  const saved = JSON.parse(response.body).post;
+  assert.deepEqual(Object.keys(saved.media[0].thumbnails), ["600x300", "960x480"]);
+  assert.equal(saved.media[0].thumbnails["600x300"].url, `https://cdn.example.com/${thumbnailKey(asset.key, "600x300")}`);
+  assert.deepEqual(readPosts(JSON.parse(s3.documents.get(key)!.body), month), [saved]);
+  assert.equal((await handle(event(draft))).statusCode, 200);
+  const auth = new MediaAuth();
+  auth.login("owner", "fixture-password");
+  const api = new MediaApi({ apiUrl: "https://api.example.com", bucket: LOCAL_BUCKET, auth, fetch: async (url, options) => {
+    assert.deepEqual(JSON.parse(String(options?.body)).media, [{ key: asset.key, size: asset.size, thumbnails: thumbnailInputs(thumbnails) }]);
+    return Response.json({ bucket: LOCAL_BUCKET, post: saved });
+  } });
+  assert.deepEqual((await api.post(draft, month)).media[0].thumbnails, saved.media[0].thumbnails);
 });
 
 test("post writes require auth and validate month, text, tags and current-month media", async () => {
@@ -214,12 +263,27 @@ test("API sends tags separately, strips client media URLs and validates the save
   assert.equal((await api.post(draft, month)).id, draft.id);
 });
 
+test("API sends video poster metadata without trusting client poster URLs", async () => {
+  const auth = new MediaAuth();
+  auth.login("owner", "fixture-password");
+  const video = { key: `${LOCAL_PREFIX}2026/01/clip.mp4`, size: 123, url: "https://cdn.example.com/clip.mp4" };
+  const poster = { key: `${video.key}.poster.jpg`, size: 45, time: 0.5, url: "https://cdn.example.com/poster.jpg" };
+  const draft = { ...input(), media: [{ ...video, poster }] };
+  const api = new MediaApi({ apiUrl: "https://api.example.com", bucket: LOCAL_BUCKET, auth, fetch: async (url, options) => {
+    assert.deepEqual(JSON.parse(String(options?.body)).media, [{ key: video.key, size: video.size,
+      poster: { key: poster.key, size: poster.size, time: poster.time } }]);
+    return Response.json({ bucket: LOCAL_BUCKET, post: { ...draft, created: now().toISOString() } });
+  } });
+  assert.deepEqual((await api.post(draft, month)).media[0].poster, poster);
+});
+
 test("composer parses tags, uploads once, and retries the identical post after a failed save", async t => {
   const drafts: PostInput[] = [];
   let uploads = 0;
   const api = {
     prepare: async () => { throw new Error("not used"); },
     sign: async () => { throw new Error("not used"); },
+    setThumbnails: async () => ({}),
     post: async (draft: PostInput, requestedMonth: string) => {
       assert.equal(requestedMonth, month);
       drafts.push(draft);
@@ -257,6 +321,7 @@ test("composer rejects invalid drafts before uploading and supports text-only po
   const api = {
     prepare: async () => { throw new Error("not used"); },
     sign: async () => { throw new Error("not used"); },
+    setThumbnails: async () => ({}),
     post: async (draft: PostInput, requestedMonth: string) => {
       saves++;
       assert.equal(requestedMonth, month);
@@ -276,6 +341,7 @@ test("composer never associates already uploaded previous-month media with the n
   const api = {
     prepare: async () => { throw new Error("not used"); },
     sign: async () => { throw new Error("not used"); },
+    setThumbnails: async () => ({}),
     post: async (): Promise<Post> => { throw new Error("must not save"); },
   };
   const uploader = new MediaUploader(api, { month: "2025-12" });
@@ -292,6 +358,7 @@ test("cancelled media uploads never publish an unintended text-only update", asy
   const api = {
     prepare: async () => { throw new Error("not used"); },
     sign: async () => { throw new Error("not used"); },
+    setThumbnails: async () => ({}),
     post: async (): Promise<Post> => { saves++; return post(); },
   };
   const uploader = new MediaUploader(api, { month });

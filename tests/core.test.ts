@@ -81,6 +81,20 @@ test("API rejects mismatched buckets, unsafe URLs, malformed data and stale sess
   await assert.rejects(request, /Sign-in changed/);
 });
 
+test("library API preserves video posters and rejects unsafe or mismatched companions", async () => {
+  const auth = new MediaAuth();
+  auth.login(...credentials);
+  const video = { ...item, key: "media/2026/11/video.mp4", poster: {
+    key: "media/2026/11/video.mp4.poster.jpg", url: "https://media.example.com/media/2026/11/video.mp4.poster.jpg", size: 45,
+  } };
+  const api = new MediaApi({ ...configuration, auth, fetch: async () => Response.json({ bucket: configuration.bucket, items: [video], cursor: null }) });
+  assert.deepEqual((await api.list()).items[0], video);
+  for (const poster of [{ ...video.poster, url: "http://insecure.example/poster.jpg" }, { ...video.poster, key: "other.mp4.poster.jpg" }]) {
+    api.fetch = async () => Response.json({ bucket: configuration.bucket, items: [{ ...video, poster }], cursor: null });
+    await assert.rejects(api.list());
+  }
+});
+
 test("library refresh cancels obsolete months, resets pagination and exposes real failures", async () => {
   const calls: (ListOptions & ReturnType<typeof deferred<MediaPage>>)[] = [];
   const api = { list: (options: ListOptions = {}) => {
@@ -141,6 +155,14 @@ test("controller composes independent models, gates tabs and clears auth on sign
   assert.equal(controller.state.authenticated, true);
   controller.selectTab("upload");
   assert.equal(controller.state.tab, "upload");
+  controller.postsEditor!.setState({ dirty: true });
+  assert.equal(controller.state.postsDirty, true);
+  assert.equal(controller.signOut(), false);
+  assert.match(controller.state.error!.message, /Save or discard/);
+  controller.postsEditor!.setState({ dirty: false, saving: true });
+  assert.equal(controller.state.uploading, true);
+  assert.equal(controller.signOut(), false);
+  controller.postsEditor!.setState({ saving: false });
   uploader.setState({ uploading: true });
   assert.equal(controller.signOut(), false);
   assert.match(controller.state.error!.message, /Finish or cancel/);
@@ -148,6 +170,7 @@ test("controller composes independent models, gates tabs and clears auth on sign
   assert.equal(controller.signOut(), true);
   assert.equal(destroyed, true);
   assert.equal(controller.state.authenticated, false);
+  assert.equal(controller.postsEditor, null);
   assert.throws(() => controller.auth.authorization, /Sign in/);
 });
 
@@ -164,15 +187,19 @@ test("unauthorized login remains locked and does not initialize an uploader", as
 
 test("headless upload signing replaces proposal keys only once and reuses its multipart grant", async t => {
   const calls: { value: MediaFile; month: string }[] = [];
-  const api: Pick<MediaApi, "prepare" | "sign"> = {
+  const api: Pick<MediaApi, "prepare" | "sign" | "setThumbnails"> = {
+    setThumbnails: async () => ({}),
     prepare: async (value, month) => { calls.push({ value, month }); return {
       key: "media/2026/11/video.mp4", ticket: "ticket", url: item.url, partSize: 10 * 1024 ** 2,
     }; },
     sign: async (request, grant) => ({ ...request, key: grant.key, url: grant.url }),
   };
-  const uploader = new MediaUploader(api, { month: "2026-11" });
+  const uploader = new MediaUploader(api, { month: "2026-11", videoFactory: async () => ({
+    url: "blob:fixture", duration: 2, capture: async () => ({ blob: new Blob(["poster"], { type: "image/jpeg" }), width: 1280, height: 720 }), destroy() {},
+  }) });
   t.after(() => uploader.destroy());
   const id = uploader.uppy.addFile({ name: "video.mp4", type: "video/mp4", data: new Blob([new Uint8Array(123)]) });
+  await uploader.ready();
   const plugin = uploader.uppy.getPlugin<AwsS3<Meta, AwsBody>>("AwsS3");
   assert.ok(plugin);
   assert.ok("signRequest" in plugin.opts);

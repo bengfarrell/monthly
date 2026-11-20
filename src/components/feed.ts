@@ -2,7 +2,7 @@ import { LitElement, html, nothing, type PropertyValues } from "lit";
 import { PostFeed } from "../core/feed.js";
 import type { Unsubscribe } from "../core/store.js";
 import { asError } from "../shared/errors.js";
-import { mediaType } from "../shared/media-types.js";
+import { firstThumbnail, mediaType } from "../shared/media-types.js";
 import type { Post } from "../shared/posts.js";
 import "@awesome.me/webawesome/dist/components/callout/callout.js";
 
@@ -65,8 +65,9 @@ export class MonthlyFeed extends LitElement {
                 <div class="monthly-post-media">${post.media.map(item => {
                   const type = mediaType(item.key);
                   const name = item.key.split("/").at(-1)!;
-                  return type?.startsWith("image/") ? html`<img class="monthly-preview" src=${item.url} alt=${name} loading="lazy" referrerpolicy="no-referrer">` :
-                    type?.startsWith("video/") ? html`<video class="monthly-preview" src=${item.url} aria-label=${name} controls preload="metadata"></video>` :
+                  const thumbnail = firstThumbnail(item);
+                  return type?.startsWith("image/") ? html`<img class="monthly-preview" src=${thumbnail?.url ?? item.url} alt=${name} loading="lazy" referrerpolicy="no-referrer">` :
+                    type?.startsWith("video/") ? html`<video class="monthly-preview" src=${item.url} poster=${thumbnail?.url ?? nothing} aria-label=${name} controls preload=${thumbnail ? "none" : "metadata"}></video>` :
                       type?.startsWith("audio/") ? html`<audio class="monthly-preview" src=${item.url} aria-label=${name} controls preload="metadata"></audio>` : nothing;
                 })}</div>
                 <time class="monthly-post-date" datetime=${post.created}>${new Date(post.created).toLocaleString()}</time>

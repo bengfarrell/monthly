@@ -1,7 +1,7 @@
 import type { Plugin } from "vite";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { fileURLToPath } from "node:url";
-import { createHandler } from "../lambda/handler.js";
+import { createHandler, requestBodyLimit } from "../lambda/handler.js";
 import { asError } from "../src/shared/errors.js";
 import { FIXTURE_FILE, LOCAL_BUCKET, LOCAL_PASSWORD, LOCAL_PREFIX, LOCAL_USERNAME, loadAssets } from "./fixtures.js";
 import { LocalHttpError, MockS3, readBody } from "./mock-s3.js";
@@ -54,7 +54,7 @@ export function localApi(environment: Record<string, string>): Plugin {
           });
           handlers.set(url.origin, handler);
         }
-        const { text } = await readBody(request, url.pathname === "/posts" ? 65536 : 8192);
+        const { text } = await readBody(request, requestBodyLimit(`${request.method} ${url.pathname}`));
         const headers = Object.fromEntries(Object.entries(request.headers).map(([name, value]) => [
           name, Array.isArray(value) ? value.join(", ") : value,
         ]));
@@ -66,7 +66,7 @@ export function localApi(environment: Record<string, string>): Plugin {
       }
       server.middlewares.use((request, response, next) => {
         const path = request.url?.split("?")[0] ?? "";
-        if (!["/media", "/uploads", "/sign", "/posts"].includes(path) &&
+        if (!["/media", "/uploads", "/sign", "/posts", "/posts/edit", "/thumbnails"].includes(path) &&
             !path.startsWith(`/${LOCAL_PREFIX}`) && !path.startsWith("/__monthly/s3/")) {
           next();
           return;

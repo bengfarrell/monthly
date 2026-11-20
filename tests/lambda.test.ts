@@ -26,6 +26,7 @@ function setup(options: Partial<HandlerOptions> = {}) {
     config, now, logger: { error: (...args) => errors.push(args) },
     clientForRegion: () => ({ send: async command => {
       commands.push(command);
+      if (command instanceof GetObjectCommand) throw Object.assign(new Error("Missing index"), { name: "NoSuchKey" });
       return { Contents: [{ Key: "media/2026/11/image #1.png", Size: 123 }], IsTruncated: true, NextContinuationToken: "next" };
     } }),
     sign: async (client, command, signing) => {
@@ -44,7 +45,7 @@ async function prepare(handle: ReturnType<typeof createHandler>, overrides = {},
 
 test("every route requires Basic credentials; allowlist rejects unknown buckets before S3", async () => {
   const { handle, commands } = setup();
-  for (const route of ["GET /media", "POST /uploads", "POST /sign", "POST /posts"]) {
+  for (const route of ["GET /media", "POST /uploads", "POST /sign", "POST /posts", "GET /posts", "POST /posts/edit", "POST /thumbnails"]) {
     assert.equal((await handle({ ...event(route, {}), headers: {} })).statusCode, 401);
     assert.equal((await handle(event(route, {}, "unknown-bucket"))).statusCode, 403);
   }
@@ -65,11 +66,46 @@ test("listing is prefix scoped and returns encoded CDN URLs and pagination", asy
 });
 
 test("monthly post metadata does not appear in the media library", async () => {
-  const { handle } = setup({ clientForRegion: () => ({ send: async () => ({
-    Contents: [{ Key: "media/2026/11/posts.json", Size: 100 }, { Key: "media/2026/11/photo.png", Size: 123 }],
-  }) }) });
+  const { handle } = setup({ clientForRegion: () => ({ send: async command => {
+    if (command instanceof GetObjectCommand) throw Object.assign(new Error("Missing index"), { name: "NoSuchKey" });
+    return { Contents: [{ Key: "media/2026/11/posts.json", Size: 100 }, { Key: "media/2026/11/thumbnails.json", Size: 100 },
+      { Key: "media/2026/11/photo.png", Size: 123 }] };
+  } }) });
   const response = await handle(event("GET /media"));
   assert.deepEqual(JSON.parse(response.body).items.map((item: { key: string }) => item.key), ["media/2026/11/photo.png"]);
+});
+
+test("library associates companion posters across pages without exposing them as assets", async () => {
+  const video = { Key: "media/2026/11/clip.mp4", Size: 123 };
+  const poster = { Key: `${video.Key}.poster.jpg`, Size: 45 };
+  const commands: ListObjectsV2Command[] = [];
+  const { handle } = setup({ clientForRegion: () => ({ send: async command => {
+    if (command instanceof GetObjectCommand) throw Object.assign(new Error("Missing index"), { name: "NoSuchKey" });
+    assert.ok(command instanceof ListObjectsV2Command);
+    commands.push(command);
+    return { Contents: command.input.Prefix === poster.Key ? [poster] : command.input.ContinuationToken ? [poster] : [video],
+      IsTruncated: !command.input.ContinuationToken && command.input.Prefix !== poster.Key, NextContinuationToken: "next" };
+  } }) });
+  const response = await handle(event("GET /media"));
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(JSON.parse(response.body).items[0].poster, { key: poster.Key, size: 45,
+    url: `https://first.example.com/${poster.Key}` });
+  assert.equal(commands[1].input.Prefix, poster.Key);
+  const next = await handle({ ...event("GET /media"), queryStringParameters: { bucket: "first-bucket", cursor: "next" } });
+  assert.deepEqual(JSON.parse(next.body).items, []);
+});
+
+test("poster grants use the exact sanitized video filename, including maximum-length originals", async () => {
+  const { handle } = setup();
+  for (const name of ["a video.mp4", `${"long-".repeat(45)}.webm`, "../../clip.MOV"]) {
+    const video = await prepare(handle, { name, type: name.endsWith(".webm") ? "video/webm" : name.endsWith(".MOV") ? "video/quicktime" : "video/mp4" });
+    const poster = await prepare(handle, { name: "poster.jpg", type: "image/jpeg", posterFor: name });
+    assert.equal(poster.key, `${video.key}.poster.jpg`);
+  }
+  assert.equal((await handle(event("POST /uploads", { name: "video.mp4.poster.jpg", size: 123, type: "image/jpeg" }))).statusCode, 400);
+  for (const fields of [{ posterFor: "photo.png" }, { posterFor: 123 }, { posterFor: "clip.mp4", type: "image/png", name: "poster.png" }]) {
+    assert.equal((await handle(event("POST /uploads", { name: "poster.jpg", type: "image/jpeg", size: 123, ...fields }))).statusCode, 400);
+  }
 });
 
 test("keys preserve ordinary filenames, sanitize paths and share limits and types", async () => {
@@ -135,6 +171,17 @@ test("actual regional signatures bind Content-Length and only intended creation 
 
 test("unexpected S3 failures are logged and never returned as empty success", async () => {
   const { handle, errors } = setup({ clientForRegion: () => ({ send: async () => { throw new Error("AccessDenied"); } }) });
+  assert.equal((await handle(event("GET /media"))).statusCode, 500);
+  assert.equal(errors.length, 1);
+});
+
+test("companion lookup failures are explicit library errors", async () => {
+  const { handle, errors } = setup({ clientForRegion: () => ({ send: async command => {
+    if (command instanceof GetObjectCommand) throw Object.assign(new Error("Missing index"), { name: "NoSuchKey" });
+    assert.ok(command instanceof ListObjectsV2Command);
+    if (command.input.Prefix?.endsWith(".poster.jpg")) throw new Error("S3 companion lookup failed");
+    return { Contents: [{ Key: "media/2026/11/clip.mp4", Size: 123 }] };
+  } }) });
   assert.equal((await handle(event("GET /media"))).statusCode, 500);
   assert.equal(errors.length, 1);
 });

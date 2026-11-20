@@ -1,20 +1,104 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { randomUUID } from "node:crypto";
 import { createServer } from "vite";
 import { chromium } from "playwright";
 import { createHandler, PART_SIZE } from "../lambda/handler.js";
 import type { UploadCommand } from "../lambda/handler.js";
-import type { Browser } from "playwright";
+import type { Browser, Page } from "playwright";
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { LOCAL_BUCKET, LOCAL_PASSWORD, LOCAL_USERNAME, loadAssets } from "../dev/fixtures.js";
 import type { MediaPage, SignedUpload, UploadGrant } from "../src/core/api.js";
-import { ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { ListObjectsV2Command, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { MockS3 } from "../dev/mock-s3.js";
 
 type UploadInput = UploadCommand["input"] & {
   PartNumber?: number; ContentLength?: number; ContentType?: string;
 };
+
+async function queueVideo(page: Page, name: string, size = 0, label = "Choose files") {
+  await page.getByLabel(label, { exact: true }).evaluate(async (input, { name, size }) => {
+    const ebml = {
+      join(...parts: Uint8Array[]) {
+        const result = new Uint8Array(parts.reduce((length, part) => length + part.length, 0));
+        let offset = 0;
+        for (const part of parts) { result.set(part, offset); offset += part.length; }
+        return result;
+      },
+      hex(value: string) { return Uint8Array.from(value.match(/../g)!.map(byte => parseInt(byte, 16))); },
+      text(value: string) { return new TextEncoder().encode(value); },
+      element(id: string, data: Uint8Array): Uint8Array {
+        const length = data.length < 127 ? new Uint8Array([0x80 | data.length]) :
+          new Uint8Array([0x40 | (data.length >> 8), data.length & 255]);
+        return ebml.join(ebml.hex(id), length, data);
+      },
+    };
+    const { join, hex, text, element } = ebml;
+    const canvas = document.createElement("canvas");
+    canvas.width = 1920;
+    canvas.height = 1080;
+    const context = canvas.getContext("2d")!;
+    const encoder = {
+      async frame(color: string) {
+        context.fillStyle = color;
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        const blob = await new Promise<Blob>(resolve => canvas.toBlob(blob => resolve(blob!), "image/webp", 0.8));
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        const view = new DataView(bytes.buffer);
+        for (let offset = 12; offset < bytes.length;) {
+          const length = view.getUint32(offset + 4, true);
+          if (new TextDecoder().decode(bytes.slice(offset, offset + 4)) === "VP8 ") return bytes.slice(offset + 8, offset + 8 + length);
+          offset += 8 + length + (length % 2);
+        }
+        throw new Error("The browser did not encode a VP8 test frame.");
+      },
+    };
+    const { frame } = encoder;
+    const duration = new Uint8Array(8);
+    new DataView(duration.buffer).setFloat64(0, 2000);
+    const header = element("1a45dfa3", join(element("4286", hex("01")), element("42f7", hex("01")),
+      element("42f2", hex("04")), element("42f3", hex("08")), element("4282", text("webm")),
+      element("4287", hex("02")), element("4285", hex("02"))));
+    const info = element("1549a966", join(element("2ad7b1", hex("0f4240")), element("4489", duration),
+      element("4d80", text("monthly-test")), element("5741", text("monthly-test"))));
+    const tracks = element("1654ae6b", element("ae", join(element("d7", hex("01")), element("73c5", hex("01")),
+      element("83", hex("01")), element("86", text("V_VP8")), element("e0", join(element("b0", hex("0780")), element("ba", hex("0438")))))));
+    const cluster = element("1f43b675", join(element("e7", hex("00")),
+      element("a3", join(hex("81000080"), await frame("red"))), element("a3", join(hex("8103e880"), await frame("blue")))));
+    const bytes = join(header, element("18538067", join(info, tracks, cluster)));
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([bytes, new Uint8Array(Math.max(0, size - bytes.length))], name, { type: "video/webm" }));
+    (input as HTMLInputElement).files = transfer.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }, { name, size });
+  await page.locator('.monthly-poster-picker input[type="range"]:not(:disabled)').waitFor();
+}
+
+async function queueImage(page: Page, name: string, size = 0, width = 1920, height = 1080, label = "Choose files", noise = false) {
+  await page.getByLabel(label, { exact: true }).evaluate(async (input, { name, size, width, height, noise }) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d")!;
+    context.fillStyle = "red";
+    context.fillRect(0, 0, width / 2, height);
+    if (noise) {
+      const pixels = context.createImageData(width, height);
+      for (let offset = 0; offset < pixels.data.length; offset += 65536) {
+        crypto.getRandomValues(pixels.data.subarray(offset, offset + 65536));
+      }
+      for (let offset = 3; offset < pixels.data.length; offset += 4) pixels.data[offset] = 255;
+      context.putImageData(pixels, 0, 0);
+    }
+    const blob = await new Promise<Blob>(resolve => canvas.toBlob(blob => resolve(blob!), "image/png"));
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([blob, new Uint8Array(Math.max(0, size - blob.size))], name, { type: "image/png" }));
+    (input as HTMLInputElement).files = transfer.files;
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  }, { name, size, width, height, noise });
+}
 
 test("production bundles register Web Awesome controls and include the theme without a CDN", { timeout: 30000 }, async () => {
   const browser = await chromium.launch({ headless: true, ...(process.env.MONTHLY_BROWSER_CHANNEL && { channel: process.env.MONTHLY_BROWSER_CHANNEL }) });
@@ -45,7 +129,7 @@ test("production bundles register Web Awesome controls and include the theme wit
     const signIn = page.getByRole("button", { name: "Sign in", exact: true });
     await signIn.waitFor();
     assert.equal(await signIn.evaluate(button => button.getRootNode() instanceof ShadowRoot), true);
-    assert.equal(await page.evaluate(() => ["wa-button", "wa-card", "wa-badge", "wa-callout", "wa-progress-bar", "monthly-post", "monthly-feed"].every(tag => customElements.get(tag))), true);
+    assert.equal(await page.evaluate(() => ["wa-button", "wa-card", "wa-badge", "wa-callout", "wa-progress-bar", "monthly-post", "monthly-feed", "monthly-posts-editor"].every(tag => customElements.get(tag))), true);
     assert.notEqual(await page.locator("monthly-media").evaluate(element => getComputedStyle(element).getPropertyValue("--wa-color-brand-fill-loud").trim()), "");
     assert.notEqual(await signIn.evaluate(button => getComputedStyle(button).backgroundColor), "rgba(0, 0, 0, 0)");
     await signIn.click();
@@ -163,8 +247,28 @@ test("local Lambda server uses fixtures, enforces auth, paginates, and handles r
     await page.getByRole("tab", { name: "Upload", exact: true }).click();
     const month = assets.at(-1)!.key.slice("mock-assets/".length, "mock-assets/".length + 7).replace("/", "-");
     await page.getByLabel("Upload month").fill(month);
-    for (const [name, size] of [["local-test.png", 123], ["local-test.png", 456], ["large-local.mp4", 101 * 1024 ** 2]] as const) {
-      await page.getByLabel("Choose files", { exact: true }).evaluate((input, { name, size }) => {
+    await page.getByLabel("Choose files", { exact: true }).setInputFiles({ name: "undecodable.mp4", mimeType: "video/mp4", buffer: Buffer.alloc(123) });
+    await page.getByRole("alert").filter({ hasText: "cannot decode" }).waitFor();
+    const uploadRequests: string[] = [];
+    page.on("request", request => { if (["/uploads", "/sign"].includes(new URL(request.url()).pathname)) uploadRequests.push(request.url()); });
+    await page.getByRole("button", { name: "Upload files", exact: true }).click();
+    await page.getByRole("alert").filter({ hasText: "cannot decode" }).waitFor();
+    assert.deepEqual(uploadRequests, []);
+    await page.getByRole("button", { name: "Remove undecodable.mp4", exact: true }).click();
+    let failPosters = true;
+    let videoUploadBytes = 0;
+    await page.route("**/__monthly/s3/*", route => {
+      const request = route.request();
+      if (request.method() === "PUT" && request.headers()["content-type"] === "image/jpeg") {
+        if (failPosters) return route.fulfill({ status: 500, body: "Poster storage unavailable" });
+      } else if (request.method() === "PUT") {
+        videoUploadBytes += request.postDataBuffer()?.length ?? 0;
+      }
+      return route.fallback();
+    });
+    for (const [name, size] of [["local-test.png", 123], ["local-test.png", 456], ["large-local.webm", 101 * 1024 ** 2]] as const) {
+      if (name.endsWith(".webm")) await queueVideo(page, name, size);
+      else await page.getByLabel("Choose files", { exact: true }).evaluate((input, { name, size }) => {
         const transfer = new DataTransfer();
         transfer.items.add(new File([new Uint8Array(size)], name, { type: name.endsWith(".mp4") ? "video/mp4" : "image/png" }));
         (input as HTMLInputElement).files = transfer.files;
@@ -174,12 +278,90 @@ test("local Lambda server uses fixtures, enforces auth, paginates, and handles r
       await page.getByRole("button", { name: "Upload files", exact: true }).click();
       const signed: SignedUpload = await (await signedResponse).json();
       assert.equal(new URL(signed.url).origin, origin);
+      if (name.endsWith(".webm")) {
+        await page.getByRole("status").filter({ hasText: "0 uploaded; 1 failed." }).waitFor();
+        const uploadedBytes = videoUploadBytes;
+        failPosters = false;
+        await page.getByRole("button", { name: "Upload files", exact: true }).click();
+        await page.getByRole("status").filter({ hasText: "1 uploaded; 0 failed." }).waitFor();
+        assert.equal(videoUploadBytes, uploadedBytes, "Retry should upload only the missing poster.");
+      }
       await page.getByRole("status").filter({ hasText: "1 uploaded; 0 failed." }).waitFor();
     }
     const uploaded: MediaPage = await (await page.request.get(`${origin}/media?bucket=${LOCAL_BUCKET}&month=${month}`, { headers })).json();
     assert.equal(uploaded.items.filter(item => item.key.endsWith("/local-test.png")).length, 1);
     assert.equal(uploaded.items.find(item => item.key.endsWith("/local-test.png"))!.size, 456);
-    assert.equal(uploaded.items.find(item => item.key.endsWith("/large-local.mp4"))!.size, 101 * 1024 ** 2);
+    const uploadedVideo = uploaded.items.find(item => item.key.endsWith("/large-local.webm"))!;
+    assert.equal(uploadedVideo.size, 101 * 1024 ** 2);
+    assert.equal(uploadedVideo.thumbnails!["1280x720"].key, `${uploadedVideo.key}.thumb-1280x720.jpg`);
+    assert.equal(uploaded.items.some(item => /\.thumb-\d+x\d+\.jpg$/.test(item.key)), false);
+    await queueImage(page, "large-image.png", 1024 ** 2 + 1);
+    assert.equal(await page.getByLabel("Create thumbnail for large-image.png", { exact: true }).isChecked(), true);
+    const imageSize = page.getByLabel("Thumbnail longest edge for large-image.png", { exact: true });
+    await page.waitForFunction(() => document.querySelector("monthly-upload")!.model!.state.files[0].image?.dimensions === "960x540");
+    assert.equal(await imageSize.inputValue(), "960");
+    await imageSize.fill("640");
+    await imageSize.press("Tab");
+    await page.waitForFunction(() => document.querySelector("monthly-upload")!.model!.state.files[0].image?.dimensions === "640x360");
+    const thumbnailPixels = await page.locator('img[alt="Thumbnail for large-image.png"]').evaluate(async image => {
+      await (image as HTMLImageElement).decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = 640;
+      canvas.height = 360;
+      const context = canvas.getContext("2d")!;
+      context.drawImage(image as HTMLImageElement, 0, 0);
+      return { width: (image as HTMLImageElement).naturalWidth, height: (image as HTMLImageElement).naturalHeight,
+        white: [...context.getImageData(639, 0, 1, 1).data] };
+    });
+    assert.deepEqual(thumbnailPixels, { width: 640, height: 360, white: [255, 255, 255, 255] });
+    let failIndex = true;
+    await page.route("**/thumbnails", route => {
+      if (failIndex && route.request().postDataJSON().key.endsWith("/large-image.png")) {
+        failIndex = false;
+        return route.fulfill({ status: 503, json: { error: "Thumbnail index unavailable" } });
+      }
+      return route.fallback();
+    });
+    await page.evaluate(() => { void document.querySelector("monthly-upload")!.model!.uppy.upload(); });
+    await page.getByRole("status").filter({ hasText: "0 uploaded; 1 failed." }).waitFor();
+    await page.getByRole("alert").filter({ hasText: "Thumbnail index unavailable" }).waitFor();
+    const imageBytes = videoUploadBytes;
+    await page.getByRole("button", { name: "Upload files", exact: true }).click();
+    await page.getByRole("status").filter({ hasText: "1 uploaded; 0 failed." }).waitFor();
+    assert.equal(videoUploadBytes, imageBytes, "An index retry must not upload the original again.");
+    const imagePage: MediaPage = await (await page.request.get(`${origin}/media?bucket=${LOCAL_BUCKET}&month=${month}`, { headers })).json();
+    const uploadedImage = imagePage.items.find(item => item.key.endsWith("/large-image.png"))!;
+    assert.equal(uploadedImage.size, 1024 ** 2 + 1);
+    assert.deepEqual(Object.keys(uploadedImage.thumbnails!), ["640x360"]);
+    await queueImage(page, "tiny-image.png", 0, 120, 60);
+    const tinyToggle = page.getByLabel("Create thumbnail for tiny-image.png", { exact: true });
+    assert.equal(await tinyToggle.isChecked(), false);
+    await tinyToggle.check();
+    const tinyPreview = page.locator('img[alt="Thumbnail for tiny-image.png"]');
+    await tinyPreview.waitFor();
+    assert.deepEqual(await tinyPreview.evaluate(async image => {
+      await (image as HTMLImageElement).decode();
+      return [(image as HTMLImageElement).naturalWidth, (image as HTMLImageElement).naturalHeight];
+    }), [120, 60]);
+    await tinyToggle.uncheck();
+    await tinyPreview.waitFor({ state: "detached" });
+    await page.getByRole("button", { name: "Remove tiny-image.png", exact: true }).click();
+    await queueImage(page, "noise-image.png", 0, 2048, 2048, "Choose files", true);
+    await page.waitForFunction(() => document.querySelector("monthly-upload")!.model!.state.files[0].image?.dimensions === "960x960");
+    assert.ok(await page.evaluate(() => document.querySelector("monthly-upload")!.model!.uppy.getFiles()
+      .find(file => file.name.endsWith(".thumb-960x960.jpg"))!.size! <= 1024 ** 2));
+    const noiseSize = page.getByLabel("Thumbnail longest edge for noise-image.png", { exact: true });
+    await noiseSize.fill("2048");
+    await noiseSize.press("Tab");
+    await page.getByRole("alert").filter({ hasText: "thumbnail exceeds 1 MiB" }).waitFor();
+    const preparationsBeforeOversizedThumbnail = uploadRequests.length;
+    await page.getByRole("button", { name: "Upload files", exact: true }).click();
+    await page.getByRole("alert").filter({ hasText: "thumbnail exceeds 1 MiB" }).waitFor();
+    assert.equal(uploadRequests.length, preparationsBeforeOversizedThumbnail);
+    await noiseSize.fill("320");
+    await noiseSize.press("Tab");
+    await page.waitForFunction(() => document.querySelector("monthly-upload")!.model!.state.files[0].image?.dimensions === "320x320");
+    await page.getByRole("button", { name: "Remove noise-image.png", exact: true }).click();
     const grant: UploadGrant = await (await page.request.post(`${origin}/uploads`, { headers, data: {
       bucket: LOCAL_BUCKET, name: "cancelled.png", size: 123, type: "image/png", month,
     } })).json();
@@ -204,16 +386,44 @@ test("local Lambda server uses fixtures, enforces auth, paginates, and handles r
     await page.getByLabel("Message", { exact: true }).fill(text);
     await page.getByLabel("Tags (comma-separated)", { exact: true }).fill("personal, outside");
     await page.getByLabel("Choose post media", { exact: true }).setInputFiles([
-      { name: "post-photo.png", mimeType: "image/png", buffer: Buffer.alloc(123) },
       { name: "post-audio.mp3", mimeType: "audio/mpeg", buffer: Buffer.alloc(123) },
-      { name: "post-video.mp4", mimeType: "video/mp4", buffer: Buffer.alloc(123) },
     ]);
+    await queueImage(page, "post-photo.png", 1024 ** 2 + 1, 1920, 1080, "Choose post media");
+    const previewRequests: string[] = [];
+    page.on("request", request => { if (request.method() === "GET") previewRequests.push(new URL(request.url()).pathname); });
+    await queueVideo(page, "post-video.webm", 0, "Choose post media");
+    const posterDimensions = await page.locator('img[alt="Poster frame for post-video.webm"]').evaluate(async image => {
+      await (image as HTMLImageElement).decode();
+      return { width: (image as HTMLImageElement).naturalWidth, height: (image as HTMLImageElement).naturalHeight };
+    });
+    assert.deepEqual(posterDimensions, { width: 1280, height: 720 });
+    const picker = page.getByLabel("Poster frame for post-video.webm", { exact: true });
+    await picker.evaluate(input => {
+      (input as HTMLInputElement).value = "0";
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await page.waitForFunction(() => {
+      const file = document.querySelector("monthly-post")!.model!.uploader.state.files.find(file => file.name === "post-video.webm");
+      return file?.video?.time === 0 && !file.video.checking;
+    });
+    const color = await page.locator('img[alt="Poster frame for post-video.webm"]').evaluate(async image => {
+      await (image as HTMLImageElement).decode();
+      const canvas = document.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+      const context = canvas.getContext("2d")!;
+      context.drawImage(image as HTMLImageElement, 0, 0, 1, 1);
+      return [...context.getImageData(0, 0, 1, 1).data];
+    });
+    assert.ok(color[0] > 200 && color[2] < 50, `Expected the scrubbed red frame, got ${color}`);
     await page.getByRole("button", { name: "Publish post", exact: true }).click();
     await page.getByRole("status").filter({ hasText: "Post published." }).waitFor();
     await page.locator("monthly-feed article").waitFor();
     assert.equal(await page.locator("monthly-feed .monthly-post-text").textContent(), text);
     assert.equal(await page.locator("monthly-feed img").count(), 1);
+    assert.match((await page.locator("monthly-feed img").getAttribute("src"))!, /post-photo\.png\.thumb-960x540\.jpg$/);
     assert.equal(await page.locator("monthly-feed video[controls]").count(), 1);
+    assert.match((await page.locator("monthly-feed video").getAttribute("poster"))!, /post-video\.webm\.thumb-1280x720\.jpg$/);
     assert.equal(await page.locator("monthly-feed audio[controls]").count(), 1);
     assert.equal(await page.locator("monthly-feed .monthly-post-media a").count(), 0);
     assert.equal((await page.locator("monthly-feed .monthly-post-media").textContent())!.trim(), "");
@@ -225,11 +435,67 @@ test("local Lambda server uses fixtures, enforces auth, paginates, and handles r
     const posts = await publicJson.json();
     assert.equal(posts.length, 1);
     assert.equal(posts[0].media.length, 3);
+    assert.equal(posts[0].media.find((item: { key: string }) => item.key.endsWith("post-video.webm")).thumbnails["1280x720"].time, 0);
     assert.ok(posts[0].media.every((item: { key: string }) => item.key.startsWith(`mock-assets/${currentMonth.replace("-", "/")}/`)));
     await page.getByLabel("Message", { exact: true }).fill("Another text-only update");
     await page.getByRole("button", { name: "Publish post", exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll("monthly-feed article").length === 2);
     assert.equal(await page.locator("monthly-feed .monthly-post-text").first().textContent(), "Another text-only update");
+    await page.getByRole("tab", { name: "Browse", exact: true }).click();
+    await page.getByLabel("Browse month", { exact: true }).fill(currentMonth);
+    await page.getByRole("button", { name: "Edit posts.json", exact: true }).click();
+    const json = page.getByLabel("Monthly posts JSON", { exact: true });
+    await json.waitFor();
+    const loaded = await json.inputValue();
+    const edited = JSON.parse(loaded);
+    assert.equal(edited.length, 2);
+    await json.fill("{ broken");
+    await page.getByRole("alert").filter({ hasText: "Invalid JSON" }).waitFor();
+    assert.equal(await page.getByRole("button", { name: "Save posts.json", exact: true }).isDisabled(), true);
+    assert.equal(await page.getByLabel("Browse month", { exact: true }).isDisabled(), true);
+    assert.equal(await page.getByRole("button", { name: "Sign out", exact: true }).isDisabled(), true);
+    edited[0].text = "Edited from Browse JSON";
+    edited[0].extra = { preserved: true };
+    const editedImage = edited[0].media.find((item: { key: string }) => item.key.endsWith("/post-photo.png"));
+    const secondThumbnailKey = `${editedImage.key}.thumb-320x180.jpg`;
+    editedImage.thumbnails["320x180"] = { key: secondThumbnailKey, url: `${origin}/${secondThumbnailKey}`, size: 45 };
+    const content = `${JSON.stringify(edited, null, 2)}\n`;
+    await json.fill(content);
+    await page.getByRole("status").filter({ hasText: "Valid JSON: 2 posts." }).waitFor();
+    assert.equal(await page.getByRole("button", { name: "Save posts.json", exact: true }).isDisabled(), false);
+    const savedResponse = page.waitForResponse(response => new URL(response.url()).pathname === "/posts/edit");
+    await page.getByRole("button", { name: "Save posts.json", exact: true }).click();
+    assert.equal((await savedResponse).status(), 200);
+    await page.getByRole("status").filter({ hasText: "Saved posts.json." }).waitFor();
+    await page.locator("monthly-feed .monthly-post-text").filter({ hasText: "Edited from Browse JSON" }).waitFor();
+    assert.equal(await json.inputValue(), content);
+    assert.equal(await page.getByLabel("Browse month", { exact: true }).isDisabled(), false);
+    const savedFile = await (await page.request.get(`${origin}/mock-assets/${currentMonth.replace("-", "/")}/posts.json`)).text();
+    assert.equal(savedFile, content);
+    assert.match((await page.locator("monthly-feed img").getAttribute("src"))!, /post-photo\.png\.thumb-960x540\.jpg$/);
+    assert.equal(previewRequests.some(path => path.endsWith("/post-photo.png") || path.endsWith("/post-photo.png.thumb-320x180.jpg")), false);
+    assert.equal(JSON.parse(savedFile)[0].media[2].thumbnails["1280x720"].time, 0);
+    edited[0].text = "Local edits kept on conflict";
+    const localEdits = JSON.stringify(edited, null, 2);
+    await json.fill(localEdits);
+    assert.equal((await page.request.post(`${origin}/posts`, { headers, data: {
+      bucket: LOCAL_BUCKET, month: currentMonth, id: randomUUID(), text: "Concurrent update", tags: [], media: [],
+    } })).status(), 201);
+    await page.getByRole("button", { name: "Save posts.json", exact: true }).click();
+    await page.getByRole("alert").filter({ hasText: "The posts file changed" }).waitFor();
+    assert.equal(await json.inputValue(), localEdits);
+    assert.equal(await page.getByRole("button", { name: "Reload posts.json", exact: true }).isDisabled(), true);
+    await page.getByRole("button", { name: "Discard JSON changes", exact: true }).click();
+    await page.getByRole("button", { name: "Reload posts.json", exact: true }).click();
+    await page.getByRole("status").filter({ hasText: "Valid JSON: 3 posts." }).waitFor();
+    const reloaded = JSON.parse(await json.inputValue());
+    assert.equal(reloaded[2].text, "Concurrent update");
+    assert.deepEqual(reloaded[0].extra, { preserved: true });
+    await page.getByLabel("Browse month", { exact: true }).fill(emptyMonth);
+    await page.getByRole("button", { name: "Edit posts.json", exact: true }).click();
+    await page.getByRole("alert").filter({ hasText: "No posts.json exists" }).waitFor();
+    await page.getByLabel("Browse month", { exact: true }).fill("");
+    assert.equal(await page.getByRole("button", { name: "Edit posts.json", exact: true }).isDisabled(), true);
     await page.getByRole("button", { name: "Sign out", exact: true }).click();
     assert.equal(await page.locator("monthly-feed article").count(), 2);
     assert.ok(outsideRequests.every(url => ["picsum.photos", "interactive-examples.mdn.mozilla.net"].includes(new URL(url).hostname)));
@@ -258,6 +524,7 @@ test("Lit media views preserve login, filtering, clipboard, uploads, styling and
     let outage = false;
     let holdUpload = false;
     let uploadGate: Promise<void> | undefined;
+    const s3 = new MockS3([]);
     const handler = createHandler({
       config: {
         username, password,
@@ -267,7 +534,8 @@ test("Lit media views preserve login, filtering, clipboard, uploads, styling and
         },
       },
       clientForRegion: () => ({ send: async command => {
-        assert.ok(command instanceof ListObjectsV2Command);
+        if (!(command instanceof ListObjectsV2Command)) return s3.send(command instanceof GetObjectCommand ?
+          new GetObjectCommand({ ...command.input, Bucket: LOCAL_BUCKET }) : new PutObjectCommand({ ...command.input, Bucket: LOCAL_BUCKET }));
         return ({
         Contents: command.input.ContinuationToken ? [] : [
           { Key: `${command.input.Bucket === "first-bucket" ? "media" : "uploads"}/2026/11/existing.png`, Size: 123 },
@@ -396,12 +664,7 @@ test("Lit media views preserve login, filtering, clipboard, uploads, styling and
     await page.getByLabel("Choose files", { exact: true }).setInputFiles({ name: "recording.wav", mimeType: "audio/x-wav", buffer: Buffer.alloc(123) });
     await page.getByRole("button", { name: "Upload files", exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll("monthly-upload monthly-asset").length === 2);
-    await page.getByLabel("Choose files", { exact: true }).evaluate(input => {
-      const transfer = new DataTransfer();
-      transfer.items.add(new File([new Uint8Array(101 * 1024 ** 2)], "large.mp4", { type: "video/mp4" }));
-      (input as HTMLInputElement).files = transfer.files;
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-    });
+    await queueVideo(page, "large.webm", 101 * 1024 ** 2);
     await page.getByRole("button", { name: "Upload files", exact: true }).click();
     await page.waitForFunction(() => document.querySelectorAll("monthly-upload monthly-asset").length === 3);
     const parts = s3Requests.filter(request => request.operation === "UploadPartCommand");

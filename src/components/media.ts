@@ -107,7 +107,7 @@ export class MonthlyMedia extends LitElement {
             @keydown=${(event: KeyboardEvent) => this.navigate(event, tab)}>${{ browse: "Browse", upload: "Upload", post: "Post" }[tab]}</button>`)}
         </div>
         <div class="monthly-auth-actions">
-          ${state.authenticated ? html`<wa-button class="monthly-button" size="s" type="button" ?disabled=${state.uploading} @click=${() => controller.signOut()}>Sign out</wa-button>` :
+          ${state.authenticated ? html`<wa-button class="monthly-button" size="s" type="button" ?disabled=${state.uploading || state.postsDirty} @click=${() => controller.signOut()}>Sign out</wa-button>` :
             html`<wa-button class="monthly-button" variant="brand" size="s" type="submit" form=${formId} ?disabled=${state.signingIn} ?loading=${state.signingIn}>Sign in</wa-button>`}
         </div>
       </div>
@@ -124,7 +124,7 @@ export class MonthlyMedia extends LitElement {
       </wa-card>
       <div ?hidden=${!state.authenticated}>
         <div id=${`${this.idPrefix}-browse-panel`} role="tabpanel" aria-labelledby=${`${this.idPrefix}-browse-tab`} tabindex="0" ?hidden=${state.tab !== "browse"}>
-          <monthly-library .model=${controller.library}></monthly-library>
+          <monthly-library .model=${controller.library} .editor=${controller.postsEditor}></monthly-library>
         </div>
         <div id=${`${this.idPrefix}-upload-panel`} role="tabpanel" aria-labelledby=${`${this.idPrefix}-upload-tab`} tabindex="0" ?hidden=${state.tab !== "upload"}>
           <monthly-upload .model=${controller.uploader}></monthly-upload>

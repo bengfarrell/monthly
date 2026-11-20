@@ -1,7 +1,7 @@
 import { MediaAuth } from "./auth.js";
-import { PART_SIZE, httpsUrl, isRecord, mediaType, validateConnection, validateFile, validateMonth } from "../shared/media-types.js";
-import type { MediaFile, MediaItem } from "../shared/media-types.js";
-import { readPosts, type PostInput } from "../shared/posts.js";
+import { PART_SIZE, httpsUrl, isRecord, mediaType, readThumbnails, thumbnailInputs, validateThumbnails, validateConnection, validateFile, validateMonth, validatePoster } from "../shared/media-types.js";
+import type { MediaFile, MediaItem, Thumbnails } from "../shared/media-types.js";
+import { POSTS_FILE, readPosts, validatePostsJson, validatePostsFileSize, validatePostsEtag, type PostInput } from "../shared/posts.js";
 
 export interface MediaApiOptions {
   apiUrl: string;
@@ -12,6 +12,7 @@ export interface MediaApiOptions {
 }
 export interface ListOptions { month?: string; cursor?: string | null; signal?: AbortSignal }
 export interface MediaPage { items: MediaItem[]; cursor: string | null; bucket?: string }
+export interface PostsFile { key: string; url: string; etag: string; content: string }
 export interface UploadGrant { key: string; ticket: string; url: string; partSize: number; bucket?: string }
 export interface SignRequest {
   key: string;
@@ -90,7 +91,16 @@ export class MediaApi {
         throw new Error("Invalid media item.");
       }
       httpsUrl(item.url);
-      return { key: item.key, size: item.size, url: item.url, ...(typeof item.modified === "string" && { modified: item.modified }) };
+      let poster: MediaItem["poster"];
+      if (item.poster !== undefined) {
+        validatePoster(item.poster, item.key);
+        if (!("url" in item.poster) || typeof item.poster.url !== "string") throw new Error("Invalid video poster URL.");
+        httpsUrl(item.poster.url);
+        poster = { key: item.poster.key, size: item.poster.size, url: item.poster.url,
+          ...(item.poster.time !== undefined && { time: item.poster.time }) };
+      }
+      return { key: item.key, size: item.size, url: item.url, ...(typeof item.modified === "string" && { modified: item.modified }),
+        ...(poster && { poster }), ...(item.thumbnails !== undefined && { thumbnails: readThumbnails(item.thumbnails, item.key) }) };
     });
     return { bucket: this.config.bucket, items, cursor: page.cursor };
   }
@@ -98,7 +108,9 @@ export class MediaApi {
   async prepare(file: MediaFile, month: string): Promise<UploadGrant> {
     validateFile(file);
     validateMonth(month);
-    const grant = await this.request("/uploads", { name: file.name, size: file.size, type: mediaType(file.name), month });
+    const grant = await this.request("/uploads", { name: file.name, size: file.size, type: mediaType(file.name), month,
+      ...(file.posterFor !== undefined && { posterFor: file.posterFor }),
+      ...(file.thumbnailFor !== undefined && { thumbnailFor: file.thumbnailFor, dimensions: file.dimensions }) });
     if (typeof grant.key !== "string" || typeof grant.ticket !== "string" || typeof grant.url !== "string" || grant.partSize !== PART_SIZE) {
       throw new Error("Invalid upload grant or incompatible API part size.");
     }
@@ -110,11 +122,49 @@ export class MediaApi {
   async post(input: PostInput, month: string) {
     validateMonth(month);
     const data = await this.request("/posts", {
-      ...input, month, media: input.media.map(({ key, size }) => ({ key, size })),
+      ...input, month, media: input.media.map(({ key, size, poster, thumbnails }) => ({
+        key, size, ...(poster && { poster: { key: poster.key, size: poster.size, ...(poster.time !== undefined && { time: poster.time }) } }),
+        ...(thumbnails !== undefined && { thumbnails: thumbnailInputs(thumbnails) }),
+      })),
     });
     const post = readPosts([data.post], month)[0];
     if (post.id !== input.id) throw new Error("The media API returned a different post.");
     return post;
+  }
+
+  async setThumbnails(item: Pick<MediaItem, "key" | "thumbnails">, month: string, signal?: AbortSignal): Promise<Thumbnails> {
+    validateMonth(month);
+    const thumbnails = thumbnailInputs(item.thumbnails ?? {});
+    validateThumbnails(thumbnails, item.key);
+    const data = await this.request("/thumbnails", { key: item.key, thumbnails, month }, signal);
+    if (data.key !== item.key) throw new Error("The thumbnail index returned a different media key.");
+    const saved = readThumbnails(data.thumbnails, item.key);
+    if (JSON.stringify(thumbnailInputs(saved)) !== JSON.stringify(thumbnails)) {
+      throw new Error("The saved thumbnail index does not match the uploaded thumbnails.");
+    }
+    return saved;
+  }
+
+  #readPostsFile(data: Record<string, unknown>, month: string): PostsFile {
+    if (typeof data.key !== "string" || !data.key.endsWith(`/${month.replace("-", "/")}/${POSTS_FILE}`) ||
+        typeof data.url !== "string" || typeof data.content !== "string") throw new Error("Invalid monthly posts file response.");
+    httpsUrl(data.url);
+    validatePostsEtag(data.etag);
+    validatePostsFileSize(data.content);
+    return { key: data.key, url: data.url, etag: data.etag, content: data.content };
+  }
+
+  async getPostsFile(month: string, signal?: AbortSignal): Promise<PostsFile> {
+    validateMonth(month);
+    return this.#readPostsFile(await this.request(`/posts?${new URLSearchParams({ month })}`, undefined, signal), month);
+  }
+
+  async savePostsFile(month: string, content: string, etag: string, signal?: AbortSignal): Promise<PostsFile> {
+    validatePostsJson(content, month);
+    validatePostsEtag(etag);
+    const file = this.#readPostsFile(await this.request("/posts/edit", { month, content, etag }, signal), month);
+    if (file.content !== content) throw new Error("The saved posts file differs from your edits. Reload it before editing again.");
+    return file;
   }
 
   async sign(request: SignRequest, grant: UploadGrant): Promise<SignedUpload> {

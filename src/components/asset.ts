@@ -1,5 +1,5 @@
 import { LitElement, html, nothing, type TemplateResult } from "lit";
-import { formatBytes, mediaType } from "../shared/media-types.js";
+import { firstThumbnail, formatBytes, mediaType } from "../shared/media-types.js";
 import { copyIcon } from "./icons.js";
 import { copyMediaUrl } from "../core/clipboard.js";
 import type { MediaItem } from "../shared/media-types.js";
@@ -46,11 +46,12 @@ export class MonthlyAsset extends LitElement {
     const { key, url, size } = this.item;
     const name = key.split("/").at(-1);
     const type = mediaType(key);
+    const thumbnail = firstThumbnail(this.item);
     let preview: TemplateResult | typeof nothing = nothing;
-    if (this.preview && type && !["image/heic", "image/heif"].includes(type)) {
+    if (this.preview && type && (thumbnail || !["image/heic", "image/heif"].includes(type))) {
       preview = type.startsWith("audio/") ? html`<audio class="monthly-preview" src=${url} controls preload="none"></audio>` :
-        type.startsWith("video/") ? html`<video class="monthly-preview" src=${url} controls preload="none"></video>` :
-          html`<img class="monthly-preview" src=${url} alt=${name} loading="lazy">`;
+        type.startsWith("video/") ? html`<video class="monthly-preview" src=${url} poster=${thumbnail?.url ?? nothing} controls preload="none"></video>` :
+          html`<img class="monthly-preview" src=${thumbnail?.url ?? url} alt=${name} loading="lazy">`;
     }
     return html`
       <wa-card class="monthly-asset-card">
