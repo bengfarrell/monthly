@@ -186,20 +186,23 @@ in previews and does not prevent uploading an image the browser cannot decode.
 Media entries use optional **`thumbnails`**, keyed by actual pixel dimensions,
 with `{ key, url, size, time? }` file values. `time` is a video frame's position
 in seconds. Maps accept up to 20 thumbnails in insertion order, although the
-current upload controls create one per original. The library and feed use
+current upload controls create one per original. The feed uses
 **only the first thumbnail**: as the image source or video's poster. Links still
 point to originals. Old posts without thumbnails, including legacy `poster`
 entries, remain supported.
 
 Dimension-specific JPEGs use reserved `<media-key>.thumb-<width>x<height>.jpg`
-filenames. After uploading the original and thumbnail, the uploader saves the
-association in `<prefix>YYYY/MM/thumbnails.json`. Completion and publishing wait
-for that save. A failed thumbnail-index save is visible and retryable without
-re-uploading successful media. Disabling thumbnails saves an empty association,
-so replacing an original cannot accidentally reuse obsolete companions.
-The index and companion files are hidden from library listings; obsolete files
-are not deleted. Deploy the updated Lambda, add **`POST /thumbnails`**, and grant
-index read permission before deploying the frontend; see the [AWS guide](lambda/README.md).
+filenames. Originals and thumbnails use the existing upload/sign endpoints.
+Upload completion waits only for those files; no thumbnail index or association
+API is involved. Publishing embeds the association in that post's `posts.json`
+entry. Ordinary uploads do not persist associations.
+The media library lists originals, generated thumbnails, and legacy posters
+as independent media files, using each file itself for its preview. Non-media
+metadata files such as `posts.json` and old `thumbnails.json` indexes are omitted.
+Disabling a thumbnail omits it from the new post; obsolete files and existing
+posts are not changed. No `POST /thumbnails` route or thumbnail-index read
+permission is required. Deploy the updated Lambda for the plain media listing;
+see the [AWS guide](lambda/README.md).
 
 Each month stores a JSON array at `<prefix>YYYY/MM/posts.json`, beside its media:
 

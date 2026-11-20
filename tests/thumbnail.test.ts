@@ -5,7 +5,7 @@ import type { AwsBody } from "@uppy/aws-s3";
 import type { Meta } from "@uppy/core";
 import { MediaApi, MediaAuth, MediaUploader, IMAGE_THUMBNAIL_THRESHOLD, MAX_THUMBNAIL_SIZE, firstThumbnail,
   openImage, readThumbnails, thumbnailInputs, thumbnailKey, uploadFilename, validateFile, validateThumbnails } from "../src/core/index.js";
-import type { ImageSource, MediaFile, MediaItem, Thumbnails } from "../src/core/index.js";
+import type { ImageSource, MediaFile, Thumbnails } from "../src/core/index.js";
 
 const month = "2026-11";
 const key = "media/2026/11/photo.png";
@@ -16,10 +16,8 @@ function thumbnails(mediaKey = key): Thumbnails {
 }
 function setup(options: {
   imageFactory?: (file: Blob, signal: AbortSignal) => Promise<ImageSource>;
-  save?: (item: Pick<MediaItem, "key" | "thumbnails">, signal?: AbortSignal) => Promise<Thumbnails>;
 } = {}) {
   const preparations: MediaFile[] = [];
-  const saves: Pick<MediaItem, "key" | "thumbnails">[] = [];
   const sizes: number[] = [];
   const uploader = new MediaUploader({
     prepare: async file => {
@@ -29,11 +27,6 @@ function setup(options: {
       return { key, url: `https://cdn.example.com/${key}`, ticket: "fixture", partSize: 10 * 1024 ** 2 };
     },
     sign: async (request, grant) => ({ key: grant.key, url: grant.url }),
-    setThumbnails: async (item, requestedMonth, signal) => {
-      assert.equal(requestedMonth, month);
-      saves.push(item);
-      return options.save ? options.save(item, signal) : item.thumbnails ?? {};
-    },
   }, { month, imageFactory: options.imageFactory ?? (async () => ({
     width: 3840, height: 1920,
     capture: async maxDimension => {
@@ -54,7 +47,7 @@ function setup(options: {
       uploader.uppy.emit("upload-success", uploader.uppy.getFile(file.id), { status: 200, body: { key: signed.key, location: signed.url } });
     }
   };
-  return { uploader, add, finish, preparations, saves, sizes };
+  return { uploader, add, finish, preparations, sizes };
 }
 
 test("dimension maps preserve multiple files and order, while legacy posters remain readable", () => {
@@ -136,72 +129,54 @@ test("opting out during decoding cannot restore a thumbnail or a stale error", a
   assert.equal(uploader.uppy.getFiles().length, 1);
 });
 
-test("metadata failures keep uploaded media incomplete and retry without another transport upload", async t => {
-  let fail = true;
-  const { uploader, add, finish, preparations, saves } = setup({ save: async item => {
-    if (fail) throw new Error("Thumbnail index unavailable");
-    return item.thumbnails ?? {};
-  } });
+test("uploaded originals and thumbnails complete without any metadata API request", async t => {
+  const { uploader, add, finish, preparations } = setup();
   t.after(() => uploader.destroy());
   add();
   await uploader.ready();
   await finish();
   await uploader.upload();
-  assert.equal(uploader.state.files[0].complete, false);
-  assert.match(uploader.state.files[0].error!, /index unavailable/);
-  assert.deepEqual(uploader.completedMedia(), []);
-  assert.equal(uploader.setMonth("2026-12"), false);
-  assert.equal(uploader.state.month, month);
-  fail = false;
-  await uploader.upload();
   assert.equal(uploader.state.files[0].complete, true);
   assert.equal(uploader.state.files[0].error, null);
   assert.equal(uploader.state.error, null);
-  assert.equal(saves.length, 2);
   assert.equal(preparations.length, 2);
   assert.deepEqual(Object.keys(uploader.completedMedia()[0].thumbnails!), ["960x480"]);
+  await uploader.upload();
+  assert.equal(preparations.length, 2);
+  assert.equal(uploader.setMonth("2026-12"), true);
 });
 
-test("unthumbnailable small images finalize an empty map to clear previous associations", async t => {
-  const { uploader, add, finish, saves } = setup();
+test("small images complete without generating or persisting a thumbnail association", async t => {
+  const { uploader, add, finish, preparations } = setup();
   t.after(() => uploader.destroy());
   add(123);
   await uploader.ready();
   await finish();
   await uploader.upload();
-  assert.equal(saves.length, 1);
-  assert.equal(saves[0].thumbnails, undefined);
+  assert.equal(preparations.length, 1);
   assert.equal(uploader.completedMedia()[0].thumbnails, undefined);
   assert.equal(uploader.state.files[0].complete, true);
 });
 
-test("raw Uppy completion keeps busy state through index saving and cancellation ignores stale saves", async t => {
-  let resolve!: (files: Thumbnails) => void;
-  let signal: AbortSignal | undefined;
-  const { uploader, add, finish } = setup({ save: (item, abort) => {
-    signal = abort;
-    return new Promise(done => { resolve = done; });
-  } });
+test("raw Uppy completion immediately clears busy state and cancellation clears uploaded media", async t => {
+  const { uploader, add, finish } = setup();
   t.after(() => uploader.destroy());
   add();
   await uploader.ready();
   await finish();
   uploader.setState({ uploading: true });
   uploader.uppy.emit("complete", { successful: uploader.uppy.getFiles(), failed: [], uploadID: "fixture" });
-  assert.equal(uploader.state.uploading, true);
-  assert.equal(uploader.state.files[0].complete, false);
+  assert.equal(uploader.state.uploading, false);
+  assert.equal(uploader.state.files[0].complete, true);
   uploader.cancel();
   uploader.addFiles([new File(["image"], "replacement.png")]);
-  assert.equal(signal!.aborted, true);
-  resolve({});
-  await new Promise(done => setImmediate(done));
   assert.equal(uploader.state.files[0].name, "replacement.png");
   assert.equal(uploader.state.files[0].complete, false);
-  assert.equal(uploader.state.uploaded.length, 0);
+  assert.equal(uploader.completedMedia().length, 0);
   assert.equal(uploader.state.uploading, false);
 });
 
-test("API preserves library maps, sends dimension grants and saves only validated thumbnail inputs", async () => {
+test("API sends thumbnail upload grants without a separate association request", async () => {
   const auth = new MediaAuth();
   auth.login("owner", "fixture-password");
   const files = thumbnails();
@@ -220,8 +195,5 @@ test("API preserves library maps, sends dimension grants and saves only validate
   await api.prepare({ name: "thumbnail.jpg", size: 45, thumbnailFor: "photo.png", dimensions: "600x300" }, month);
   assert.equal(requests[1].body.thumbnailFor, "photo.png");
   assert.equal(requests[1].body.dimensions, "600x300");
-  assert.deepEqual(await api.setThumbnails({ key, thumbnails: files }, month), files);
-  assert.deepEqual(requests[2].body.thumbnails, thumbnailInputs(files));
-  api.fetch = async () => Response.json({ bucket: "fixture-bucket", key, thumbnails: {} });
-  await assert.rejects(api.setThumbnails({ key, thumbnails: files }, month), /does not match/);
+  assert.deepEqual(requests.map(request => request.path), ["/media", "/uploads"]);
 });

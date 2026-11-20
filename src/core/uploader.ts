@@ -56,20 +56,16 @@ export class MediaUploader extends Store<UploaderState> {
   #proposals = new Map<string, UppyFile<Meta, AwsBody>>();
   #items = new Map<string, MediaItem>();
   #selections = new Map<string, ThumbnailSelection>();
-  #finalized = new Set<string>();
-  #metadataErrors = new Map<string, string>();
-  #finishing: Promise<void> = Promise.resolve();
-  #metadataAbort?: AbortController;
   #reported = new Set<string>();
   #addingPoster = false;
   #videoFactory: (file: Blob, signal: AbortSignal) => Promise<VideoSource>;
   #imageFactory: (file: Blob, signal: AbortSignal) => Promise<ImageSource>;
   #revision = 0;
   #destroyed = false;
-  api: Pick<MediaApi, "prepare" | "sign" | "setThumbnails">;
+  api: Pick<MediaApi, "prepare" | "sign">;
   uppy: Uppy<Meta, AwsBody>;
 
-  constructor(api: Pick<MediaApi, "prepare" | "sign" | "setThumbnails">, { month = currentMonth(), videoFactory = openVideo, imageFactory = openImage, uppyFactory = options => new Uppy<Meta, AwsBody>(options) }: MediaUploaderOptions = {}) {
+  constructor(api: Pick<MediaApi, "prepare" | "sign">, { month = currentMonth(), videoFactory = openVideo, imageFactory = openImage, uppyFactory = options => new Uppy<Meta, AwsBody>(options) }: MediaUploaderOptions = {}) {
     super({ month, files: [], uploaded: [], uploading: false, error: null, summary: "" });
     this.api = api;
     this.#videoFactory = videoFactory;
@@ -114,8 +110,6 @@ export class MediaUploader extends Store<UploaderState> {
       this.#disposeSelection(file.id);
       this.#items.delete(file.id);
       this.#reported.delete(file.id);
-      this.#finalized.delete(file.id);
-      this.#metadataErrors.delete(file.id);
       for (const [proposal, candidate] of this.#proposals) {
         if (candidate.id === file.id) this.#proposals.delete(proposal);
       }
@@ -141,15 +135,12 @@ export class MediaUploader extends Store<UploaderState> {
       this.#items.set(file.id, item);
       this.#publish();
     });
-    this.uppy.on("complete", () => { this.#finishing = this.#finalize(); });
+    this.uppy.on("complete", () => this.#finish());
     this.uppy.on("cancel-all", () => {
       this.#revision++;
       this.#grants.clear();
       this.#proposals.clear();
-      this.#metadataAbort?.abort();
       this.#items.clear();
-      this.#finalized.clear();
-      this.#metadataErrors.clear();
       this.#reported.clear();
       for (const id of [...this.#selections.keys()]) this.#disposeSelection(id);
       this.setState({ uploading: false, summary: "Uploads cancelled." });
@@ -161,7 +152,7 @@ export class MediaUploader extends Store<UploaderState> {
     const files = this.#originals().map(file => {
       const video = this.#selections.get(file.id);
       const poster = video?.posterId ? this.uppy.getFile(video.posterId) : undefined;
-      const complete = !!file.progress.uploadComplete && (!video || ((!video.enabled || !!poster?.progress.uploadComplete) && this.#finalized.has(file.id)));
+      const complete = !!file.progress.uploadComplete && (!video?.enabled || !!poster?.progress.uploadComplete);
       if (complete && !this.#reported.has(file.id)) {
         const item = this.#mediaItem(file.id);
         if (item) {
@@ -173,7 +164,7 @@ export class MediaUploader extends Store<UploaderState> {
       return {
         id: file.id, name: file.name, size: file.size ?? 0,
         progress: poster && size ? 100 * (Number(file.progress.bytesUploaded || 0) + Number(poster.progress.bytesUploaded || 0)) / size : file.progress.percentage || 0,
-        complete, error: video?.error || file.error || poster?.error || this.#metadataErrors.get(file.id) || null,
+        complete, error: video?.error || file.error || poster?.error || null,
         ...(video?.kind === "video" && { video: { duration: video.source?.duration ?? 0, time: video.time, posterUrl: video.posterUrl,
           checking: video.checking, editable: !file.progress.uploadStarted } }),
         ...(video?.kind === "image" && { image: { enabled: video.enabled, maxDimension: video.maxDimension,
@@ -331,30 +322,7 @@ export class MediaUploader extends Store<UploaderState> {
     return { ...item, thumbnails: { [video.dimensions]: { ...poster, ...(video.kind === "video" && { time: video.time }) } } };
   }
 
-  async #finalize() {
-    const revision = this.#revision;
-    const abort = new AbortController();
-    this.#metadataAbort = abort;
-    await Promise.all(this.#originals().map(async file => {
-      const selection = this.#selections.get(file.id);
-      const thumbnail = selection?.posterId ? this.uppy.getFile(selection.posterId) : undefined;
-      if (!selection || this.#finalized.has(file.id) || !file.progress.uploadComplete ||
-          (selection.enabled && !thumbnail?.progress.uploadComplete)) return;
-      const item = this.#mediaItem(file.id);
-      if (!item) return;
-      try {
-        await this.api.setThumbnails(item, this.state.month, abort.signal);
-        if (revision !== this.#revision || !this.uppy.getFile(file.id)) return;
-        this.#finalized.add(file.id);
-        this.#metadataErrors.delete(file.id);
-      } catch (error) {
-        if (revision !== this.#revision) return;
-        this.#metadataErrors.set(file.id, asError(error).message);
-        this.setState({ error: asError(error) });
-      }
-      this.#publish();
-    }));
-    if (revision !== this.#revision) return;
+  #finish() {
     this.#publish();
     this.setState({ uploading: false,
       summary: `${this.state.files.filter(file => file.complete).length} uploaded; ${this.state.files.filter(file => !file.complete).length} failed.` });
@@ -438,8 +406,7 @@ export class MediaUploader extends Store<UploaderState> {
       let result;
       if (this.uppy.getFiles().some(file => !file.progress.uploadComplete)) {
         result = await this.uppy.upload();
-        await this.#finishing;
-      } else await this.#finalize();
+      } else this.#finish();
       return result;
     } catch (error) {
       if (revision === this.#revision) this.setState({ uploading: false, error: asError(error) });
@@ -450,7 +417,6 @@ export class MediaUploader extends Store<UploaderState> {
   destroy() {
     this.#destroyed = true;
     this.#revision++;
-    this.#metadataAbort?.abort();
     for (const id of [...this.#selections.keys()]) this.#disposeSelection(id);
     this.uppy.destroy();
   }

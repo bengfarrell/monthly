@@ -1,19 +1,38 @@
 {
   "name": "@bengfarrell/monthly",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Framework-independent monthly media management with lightweight Lit views.",
   "type": "module",
   "license": "MIT",
-  "engines": { "node": ">=22.12" },
+  "engines": {
+    "node": ">=22.12"
+  },
   "types": "./dist/modules/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/modules/index.d.ts", "import": "./dist/modules/index.js" },
-    "./core": { "types": "./dist/modules/core/index.d.ts", "import": "./dist/modules/core/index.js" },
-    "./components": { "types": "./dist/modules/components/index.d.ts", "import": "./dist/modules/components/index.js" },
+    ".": {
+      "types": "./dist/modules/index.d.ts",
+      "import": "./dist/modules/index.js"
+    },
+    "./core": {
+      "types": "./dist/modules/core/index.d.ts",
+      "import": "./dist/modules/core/index.js"
+    },
+    "./components": {
+      "types": "./dist/modules/components/index.d.ts",
+      "import": "./dist/modules/components/index.js"
+    },
     "./styles.css": "./dist/monthly.css",
     "./dist/monthly.js": "./dist/monthly.js"
   },
-  "files": ["src", "dist/modules", "dist/monthly.js", "dist/monthly.css", "lambda", "README.md", "LICENSE"],
+  "files": [
+    "src",
+    "dist/modules",
+    "dist/monthly.js",
+    "dist/monthly.css",
+    "lambda",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && tsc -p tsconfig.build.json && tsx scripts/build.ts",

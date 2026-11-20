@@ -45,7 +45,7 @@ async function prepare(handle: ReturnType<typeof createHandler>, overrides = {},
 
 test("every route requires Basic credentials; allowlist rejects unknown buckets before S3", async () => {
   const { handle, commands } = setup();
-  for (const route of ["GET /media", "POST /uploads", "POST /sign", "POST /posts", "GET /posts", "POST /posts/edit", "POST /thumbnails"]) {
+  for (const route of ["GET /media", "POST /uploads", "POST /sign", "POST /posts", "GET /posts", "POST /posts/edit"]) {
     assert.equal((await handle({ ...event(route, {}), headers: {} })).statusCode, 401);
     assert.equal((await handle(event(route, {}, "unknown-bucket"))).statusCode, 403);
   }
@@ -75,7 +75,7 @@ test("monthly post metadata does not appear in the media library", async () => {
   assert.deepEqual(JSON.parse(response.body).items.map((item: { key: string }) => item.key), ["media/2026/11/photo.png"]);
 });
 
-test("library associates companion posters across pages without exposing them as assets", async () => {
+test("library lists videos and companion posters independently across pages", async () => {
   const video = { Key: "media/2026/11/clip.mp4", Size: 123 };
   const poster = { Key: `${video.Key}.poster.jpg`, Size: 45 };
   const commands: ListObjectsV2Command[] = [];
@@ -88,11 +88,10 @@ test("library associates companion posters across pages without exposing them as
   } }) });
   const response = await handle(event("GET /media"));
   assert.equal(response.statusCode, 200);
-  assert.deepEqual(JSON.parse(response.body).items[0].poster, { key: poster.Key, size: 45,
-    url: `https://first.example.com/${poster.Key}` });
-  assert.equal(commands[1].input.Prefix, poster.Key);
+  assert.equal(JSON.parse(response.body).items[0].poster, undefined);
+  assert.equal(commands.length, 1);
   const next = await handle({ ...event("GET /media"), queryStringParameters: { bucket: "first-bucket", cursor: "next" } });
-  assert.deepEqual(JSON.parse(next.body).items, []);
+  assert.deepEqual(JSON.parse(next.body).items.map((item: { key: string }) => item.key), [poster.Key]);
 });
 
 test("poster grants use the exact sanitized video filename, including maximum-length originals", async () => {
@@ -175,13 +174,12 @@ test("unexpected S3 failures are logged and never returned as empty success", as
   assert.equal(errors.length, 1);
 });
 
-test("companion lookup failures are explicit library errors", async () => {
+test("library listing does not look up thumbnail indexes or companion posters", async () => {
   const { handle, errors } = setup({ clientForRegion: () => ({ send: async command => {
-    if (command instanceof GetObjectCommand) throw Object.assign(new Error("Missing index"), { name: "NoSuchKey" });
     assert.ok(command instanceof ListObjectsV2Command);
-    if (command.input.Prefix?.endsWith(".poster.jpg")) throw new Error("S3 companion lookup failed");
+    assert.equal(command.input.Prefix, "media/");
     return { Contents: [{ Key: "media/2026/11/clip.mp4", Size: 123 }] };
   } }) });
-  assert.equal((await handle(event("GET /media"))).statusCode, 500);
-  assert.equal(errors.length, 1);
+  assert.equal((await handle(event("GET /media"))).statusCode, 200);
+  assert.equal(errors.length, 0);
 });

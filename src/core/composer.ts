@@ -19,7 +19,7 @@ export class PostComposer extends Store<ComposerState> {
   #pending?: PostInput;
   #destroyed = false;
   constructor(
-    readonly api: Pick<MediaApi, "post" | "prepare" | "sign" | "setThumbnails">,
+    readonly api: Pick<MediaApi, "post" | "prepare" | "sign">,
     uploader = new MediaUploader(api),
     readonly now = () => new Date(),
   ) {

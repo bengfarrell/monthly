@@ -293,8 +293,8 @@ test("local Lambda server uses fixtures, enforces auth, paginates, and handles r
     assert.equal(uploaded.items.find(item => item.key.endsWith("/local-test.png"))!.size, 456);
     const uploadedVideo = uploaded.items.find(item => item.key.endsWith("/large-local.webm"))!;
     assert.equal(uploadedVideo.size, 101 * 1024 ** 2);
-    assert.equal(uploadedVideo.thumbnails!["1280x720"].key, `${uploadedVideo.key}.thumb-1280x720.jpg`);
-    assert.equal(uploaded.items.some(item => /\.thumb-\d+x\d+\.jpg$/.test(item.key)), false);
+    assert.equal(uploadedVideo.thumbnails, undefined);
+    assert.equal(uploaded.items.some(item => item.key === `${uploadedVideo.key}.thumb-1280x720.jpg`), true);
     await queueImage(page, "large-image.png", 1024 ** 2 + 1);
     assert.equal(await page.getByLabel("Create thumbnail for large-image.png", { exact: true }).isChecked(), true);
     const imageSize = page.getByLabel("Thumbnail longest edge for large-image.png", { exact: true });
@@ -314,25 +314,18 @@ test("local Lambda server uses fixtures, enforces auth, paginates, and handles r
         white: [...context.getImageData(639, 0, 1, 1).data] };
     });
     assert.deepEqual(thumbnailPixels, { width: 640, height: 360, white: [255, 255, 255, 255] });
-    let failIndex = true;
-    await page.route("**/thumbnails", route => {
-      if (failIndex && route.request().postDataJSON().key.endsWith("/large-image.png")) {
-        failIndex = false;
-        return route.fulfill({ status: 503, json: { error: "Thumbnail index unavailable" } });
-      }
-      return route.fallback();
+    const indexRequests: string[] = [];
+    page.on("request", request => {
+      if (new URL(request.url()).pathname === "/thumbnails") indexRequests.push(request.url());
     });
     await page.evaluate(() => { void document.querySelector("monthly-upload")!.model!.uppy.upload(); });
-    await page.getByRole("status").filter({ hasText: "0 uploaded; 1 failed." }).waitFor();
-    await page.getByRole("alert").filter({ hasText: "Thumbnail index unavailable" }).waitFor();
-    const imageBytes = videoUploadBytes;
-    await page.getByRole("button", { name: "Upload files", exact: true }).click();
     await page.getByRole("status").filter({ hasText: "1 uploaded; 0 failed." }).waitFor();
-    assert.equal(videoUploadBytes, imageBytes, "An index retry must not upload the original again.");
+    assert.deepEqual(indexRequests, []);
     const imagePage: MediaPage = await (await page.request.get(`${origin}/media?bucket=${LOCAL_BUCKET}&month=${month}`, { headers })).json();
     const uploadedImage = imagePage.items.find(item => item.key.endsWith("/large-image.png"))!;
     assert.equal(uploadedImage.size, 1024 ** 2 + 1);
-    assert.deepEqual(Object.keys(uploadedImage.thumbnails!), ["640x360"]);
+    assert.equal(uploadedImage.thumbnails, undefined);
+    assert.equal(imagePage.items.some(item => item.key === `${uploadedImage.key}.thumb-640x360.jpg`), true);
     await queueImage(page, "tiny-image.png", 0, 120, 60);
     const tinyToggle = page.getByLabel("Create thumbnail for tiny-image.png", { exact: true });
     assert.equal(await tinyToggle.isChecked(), false);

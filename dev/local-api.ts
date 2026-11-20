@@ -66,7 +66,7 @@ export function localApi(environment: Record<string, string>): Plugin {
       }
       server.middlewares.use((request, response, next) => {
         const path = request.url?.split("?")[0] ?? "";
-        if (!["/media", "/uploads", "/sign", "/posts", "/posts/edit", "/thumbnails"].includes(path) &&
+        if (!["/media", "/uploads", "/sign", "/posts", "/posts/edit"].includes(path) &&
             !path.startsWith(`/${LOCAL_PREFIX}`) && !path.startsWith("/__monthly/s3/")) {
           next();
           return;

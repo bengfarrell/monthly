@@ -1,6 +1,6 @@
 import { MediaAuth } from "./auth.js";
-import { PART_SIZE, httpsUrl, isRecord, mediaType, readThumbnails, thumbnailInputs, validateThumbnails, validateConnection, validateFile, validateMonth, validatePoster } from "../shared/media-types.js";
-import type { MediaFile, MediaItem, Thumbnails } from "../shared/media-types.js";
+import { PART_SIZE, httpsUrl, isRecord, mediaType, readThumbnails, thumbnailInputs, validateConnection, validateFile, validateMonth, validatePoster } from "../shared/media-types.js";
+import type { MediaFile, MediaItem } from "../shared/media-types.js";
 import { POSTS_FILE, readPosts, validatePostsJson, validatePostsFileSize, validatePostsEtag, type PostInput } from "../shared/posts.js";
 
 export interface MediaApiOptions {
@@ -130,19 +130,6 @@ export class MediaApi {
     const post = readPosts([data.post], month)[0];
     if (post.id !== input.id) throw new Error("The media API returned a different post.");
     return post;
-  }
-
-  async setThumbnails(item: Pick<MediaItem, "key" | "thumbnails">, month: string, signal?: AbortSignal): Promise<Thumbnails> {
-    validateMonth(month);
-    const thumbnails = thumbnailInputs(item.thumbnails ?? {});
-    validateThumbnails(thumbnails, item.key);
-    const data = await this.request("/thumbnails", { key: item.key, thumbnails, month }, signal);
-    if (data.key !== item.key) throw new Error("The thumbnail index returned a different media key.");
-    const saved = readThumbnails(data.thumbnails, item.key);
-    if (JSON.stringify(thumbnailInputs(saved)) !== JSON.stringify(thumbnails)) {
-      throw new Error("The saved thumbnail index does not match the uploaded thumbnails.");
-    }
-    return saved;
   }
 
   #readPostsFile(data: Record<string, unknown>, month: string): PostsFile {

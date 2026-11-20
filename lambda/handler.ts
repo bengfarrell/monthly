@@ -6,7 +6,7 @@ import {
   type ListObjectsV2CommandOutput,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { MEDIA_TYPES as TYPES, isRecord, mediaType, mediaUrl, MAX_FILE_SIZE, PART_SIZE, THUMBNAILS_FILE, isVideoPoster, isMediaThumbnail, posterKey, thumbnailKey, readThumbnails, validateFile, validateThumbnails, uploadFilename, type Thumbnails } from "../src/shared/media-types.js";
+import { MEDIA_TYPES as TYPES, isRecord, mediaType, mediaUrl, MAX_FILE_SIZE, PART_SIZE, posterKey, thumbnailKey, validateFile, validateThumbnails, uploadFilename, type Thumbnails } from "../src/shared/media-types.js";
 import { asError } from "../src/shared/errors.js";
 import { POSTS_FILE, MAX_POSTS_FILE_BYTES, readPosts, validatePostInput, validatePostMediaKeys, validatePostsJson, validatePostsFileSize, validatePostsEtag, type Post } from "../src/shared/posts.js";
 export { MAX_FILE_SIZE, PART_SIZE };
@@ -68,21 +68,12 @@ function json(statusCode: number, value: unknown) {
 }
 export function requestBodyLimit(routeKey: string | undefined) {
   return routeKey === "POST /posts/edit" ? MAX_POSTS_FILE_BYTES * 6 + 8192 :
-    routeKey === "POST /posts" ? 256 * 1024 : routeKey === "POST /thumbnails" ? 65536 : 8192;
+    routeKey === "POST /posts" ? 256 * 1024 : 8192;
 }
 function canonicalThumbnails(value: unknown, key: string, base: string): Thumbnails {
   validateThumbnails(value, key);
   return Object.fromEntries(Object.entries(value).map(([dimensions, file]) =>
     [dimensions, { key: file.key, size: file.size, url: mediaUrl(base, file.key), ...(file.time !== undefined && { time: file.time }) }]));
-}
-function readThumbnailIndex(value: unknown, folder: string, base: string): Record<string, Thumbnails> {
-  if (!isRecord(value)) throw new Error("Invalid monthly thumbnails file.");
-  return Object.fromEntries(Object.entries(value).map(([key, files]) => {
-    validatePostMediaKeys([{ key, size: 1 }], folder);
-    const thumbnails = readThumbnails(files, key);
-    if (Object.values(thumbnails).some(file => file.url !== mediaUrl(base, file.key))) throw new Error("Invalid thumbnail CDN URL.");
-    return [key, thumbnails];
-  }));
 }
 function parseBody(event: MediaEvent): Record<string, unknown> {
   const limit = requestBodyLimit(event.routeKey);
@@ -199,75 +190,15 @@ export function createHandler({ clientForRegion, sign = signUpload, config, now 
         }));
         const contents = result.Contents || [];
         const visible = contents.filter((item): item is typeof item & { Key: string } =>
-          !!item.Key && !item.Key.endsWith("/") && !item.Key.endsWith(`/${POSTS_FILE}`) &&
-          !item.Key.endsWith(`/${THUMBNAILS_FILE}`) && !isVideoPoster(item.Key) && !isMediaThumbnail(item.Key),
+          !!item.Key && !item.Key.endsWith("/") && !!mediaType(item.Key),
         );
-        const folders = [...new Set(visible.filter(item => /^(image|video)\//.test(mediaType(item.Key) ?? ""))
-          .map(item => item.Key.slice(0, item.Key.lastIndexOf("/") + 1)))];
-        const indices = new Map<string, Record<string, Thumbnails>>(await Promise.all(folders.map(async folder => {
-          try {
-            const object = await getClient(region).send(new GetObjectCommand({ Bucket: bucket, Key: `${folder}${THUMBNAILS_FILE}` }));
-            if (!object.Body) throw new Error("Monthly thumbnails object is missing its body.");
-            return [folder, readThumbnailIndex(JSON.parse(await object.Body.transformToString()), folder, publicBaseUrl)] as const;
-          } catch (error) {
-            if (error instanceof Error && error.name === "NoSuchKey") return [folder, {}] as const;
-            throw error;
-          }
-        })));
-        const items = await Promise.all(visible.map(async item => {
-          const folder = item.Key.slice(0, item.Key.lastIndexOf("/") + 1);
-          const thumbnails = indices.get(folder)?.[item.Key];
-          let poster;
-          if (thumbnails === undefined && mediaType(item.Key)?.startsWith("video/")) {
-            const key = posterKey(item.Key);
-            // A companion may be on a different library page.
-            const companion = contents.find(candidate => candidate.Key === key) ??
-              (await getClient(region).send(new ListObjectsV2Command({ Bucket: bucket, Prefix: key, MaxKeys: 1 }))).Contents?.find(candidate => candidate.Key === key);
-            if (companion) {
-              if (typeof companion.Size !== "number" || companion.Size < 1) throw new Error("Video poster size is missing.");
-              poster = { key, size: companion.Size, url: mediaUrl(publicBaseUrl, key) };
-            }
-          }
-          return { key: item.Key, size: item.Size, modified: item.LastModified?.toISOString(), url: mediaUrl(publicBaseUrl, item.Key),
-            ...(poster && { poster }), ...(thumbnails !== undefined && { thumbnails }) };
+        const items = visible.map(item => ({
+          key: item.Key, size: item.Size, modified: item.LastModified?.toISOString(), url: mediaUrl(publicBaseUrl, item.Key),
         }));
         return json(200, {
           bucket, items,
           cursor: result.IsTruncated ? result.NextContinuationToken : null,
         });
-      }
-      if (route === "POST /thumbnails") {
-        const body = parseBody(event);
-        const { bucket, prefix, publicBaseUrl, region } = destination(body.bucket);
-        const folder = monthPrefix(body.month, prefix);
-        if (typeof body.key !== "string") reject("A media key is required.");
-        let thumbnails: Thumbnails;
-        try {
-          validatePostMediaKeys([{ key: body.key, size: 1 }], folder);
-          thumbnails = canonicalThumbnails(body.thumbnails, body.key, publicBaseUrl);
-        } catch (error) { reject(asError(error).message); }
-        const client = getClient(region);
-        const input = { Bucket: bucket, Key: `${folder}${THUMBNAILS_FILE}` };
-        for (let attempt = 0; attempt < 5; attempt++) {
-          let index: Record<string, Thumbnails> = {};
-          let etag: string | undefined;
-          try {
-            const object = await client.send(new GetObjectCommand(input));
-            if (!object.Body || !object.ETag) throw new Error("Monthly thumbnails object is missing its body or ETag.");
-            index = readThumbnailIndex(JSON.parse(await object.Body.transformToString()), folder, publicBaseUrl);
-            etag = object.ETag;
-          } catch (error) {
-            if (!(error instanceof Error) || error.name !== "NoSuchKey") throw error;
-          }
-          try {
-            await client.send(new PutObjectCommand({ ...input, Body: JSON.stringify({ ...index, [body.key]: thumbnails }),
-              ContentType: "application/json", CacheControl: "no-cache", ...(etag ? { IfMatch: etag } : { IfNoneMatch: "*" }) }));
-            return json(200, { bucket, key: body.key, thumbnails });
-          } catch (error) {
-            if (!(error instanceof Error) || !["PreconditionFailed", "ConditionalRequestConflict"].includes(error.name)) throw error;
-          }
-        }
-        throw new HttpError(409, "The monthly thumbnails file changed repeatedly. Retry the upload to save its thumbnails.");
       }
       if (route === "GET /posts") {
         const query = event.queryStringParameters || {};

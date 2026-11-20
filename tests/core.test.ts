@@ -187,8 +187,7 @@ test("unauthorized login remains locked and does not initialize an uploader", as
 
 test("headless upload signing replaces proposal keys only once and reuses its multipart grant", async t => {
   const calls: { value: MediaFile; month: string }[] = [];
-  const api: Pick<MediaApi, "prepare" | "sign" | "setThumbnails"> = {
-    setThumbnails: async () => ({}),
+  const api: Pick<MediaApi, "prepare" | "sign"> = {
     prepare: async (value, month) => { calls.push({ value, month }); return {
       key: "media/2026/11/video.mp4", ticket: "ticket", url: item.url, partSize: 10 * 1024 ** 2,
     }; },

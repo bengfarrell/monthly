@@ -20,7 +20,6 @@ function setup(videoFactory: (file: Blob) => Promise<VideoSource> = async () => 
         ticket: "fixture", partSize: 10 * 1024 ** 2 };
     },
     sign: async (request, grant) => ({ key: grant.key, url: grant.url }),
-    setThumbnails: async item => item.thumbnails ?? {},
   }, { month: "2026-11", videoFactory });
   const add = (name = "video.mp4") => uploader.uppy.addFile({ name, type: "video/mp4", data: new Blob(["video-bytes"]) });
   const finish = async (id: string) => {

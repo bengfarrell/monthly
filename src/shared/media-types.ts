@@ -18,7 +18,6 @@ export const IMAGE_THUMBNAIL_THRESHOLD = 1024 ** 2;
 export const DEFAULT_THUMBNAIL_DIMENSION = 960;
 export const MAX_THUMBNAIL_SIZE = 1024 ** 2;
 export const MAX_THUMBNAILS = 20;
-export const THUMBNAILS_FILE = "thumbnails.json";
 export interface MediaFile { name: string; size: number; posterFor?: string; thumbnailFor?: string; dimensions?: string }
 export interface MediaThumbnail { key: string; url: string; size: number; time?: number }
 export type MediaPoster = MediaThumbnail;

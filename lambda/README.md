@@ -8,7 +8,6 @@ The Lambda preserves the existing media HTTP API payload-2.0 routes and adds pos
 | `GET /posts` | Authenticated raw monthly `posts.json` and ETag; query `bucket`, `month` |
 | `POST /posts/edit` | Replace existing monthly JSON; body `bucket`, `month`, loaded `etag`, edited JSON text `content` |
 | `POST /uploads` | JSON `bucket`, filename `name`, canonical `type`, `size`, `month`; thumbnails add original filename `thumbnailFor` and `dimensions` |
-| `POST /thumbnails` | JSON `bucket`, `month`, original media `key`, dimension-keyed `thumbnails` map |
 | `POST /sign` | JSON `bucket`, grant `key` / `ticket`, HTTP `method`, optional multipart fields |
 | `POST /posts` | JSON `bucket`, current UTC `month`, UUID `id`, `text`, `tags`, `media` entries `{ key, size, thumbnails?: { "600x300": { key, size, time? } } }`; legacy `poster` is accepted |
 
@@ -21,9 +20,10 @@ invoke permission as well as uploading the new Lambda ZIP.
 For the Browse JSON editor, also add **`GET /posts`** and **`POST /posts/edit`**
 with their Lambda integrations and invoke permissions. Existing GET/POST CORS
 and the execution role's posts.json read/write permissions cover these routes.
-For thumbnails, add **`POST /thumbnails`** with its Lambda integration and invoke
-permission, and extend `s3:GetObject` to `<prefix>*/thumbnails.json`.
-This read permission is also required by library listings.
+Thumbnails use the existing upload/sign routes; associations are stored only
+in published posts. No thumbnail endpoint or thumbnail-index permissions are
+required. Older deployments can remove the retired `POST /thumbnails` route
+and its invoke permission; retained `thumbnails.json` objects are ignored.
 
 Posts may contain text, media, or both. Text is limited to 4000 characters;
 tags to 32 entries of 64 characters each; media to 20 supported assets in the
@@ -49,20 +49,15 @@ grants and `poster` metadata remain accepted. The API cannot independently
 verify browser decoding or guarantee compatibility across viewers.
 Deploy the updated Lambda before the updated frontend.
 
-After originals and thumbnails finish uploading, `POST /thumbnails` conditionally
-merges that original's entire map into `<prefix>YYYY/MM/thumbnails.json`, using
-ETags and up to five conflict retries. An empty map explicitly disables existing
-associations. Only `NoSuchKey` creates a new index; corrupt JSON, invalid stored
-metadata and access failures never overwrite it. Media completion and posting
-wait for index saving; users can retry an index failure without re-uploading bytes.
+After originals and thumbnails finish uploading, completion requires no further
+API call. Publishing carries the dimension-keyed thumbnail map in the existing
+`POST /posts` payload and stores it in `posts.json`.
 
-`GET /media` reads the index once per visible media folder and returns thumbnail
-maps in stored order, hiding generated JPEGs and both JSON metadata files.
-The library and feed use only the first thumbnail. A missing index entry falls
-back to the legacy video's `.poster.jpg` companion, including cross-page lookup;
-an explicitly empty entry suppresses that fallback. Removed thumbnail references
-do not delete obsolete S3 objects. Listing/storage failures are explicit errors.
-Editing a post's thumbnails changes that post, not the standalone library index.
+`GET /media` lists all supported media objects as independent files, including
+generated thumbnail JPEGs and legacy `.poster.jpg` files, with normal pagination.
+It does not read metadata indexes or search for companion files. Non-media JSON
+files are omitted. The feed uses thumbnail associations from each post only.
+Removing or editing a post's thumbnail references does not delete S3 objects.
 
 ## Editing monthly JSON
 
@@ -165,10 +160,7 @@ Repeat with the appropriate bucket and prefix for each allowlisted destination:
     {
       "Effect": "Allow",
       "Action": "s3:GetObject",
-      "Resource": [
-        "arn:aws:s3:::site-one-media/wp-content/uploads/*/posts.json",
-        "arn:aws:s3:::site-one-media/wp-content/uploads/*/thumbnails.json"
-      ]
+      "Resource": "arn:aws:s3:::site-one-media/wp-content/uploads/*/posts.json"
     }
   ]
 }

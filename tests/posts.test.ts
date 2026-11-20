@@ -283,7 +283,6 @@ test("composer parses tags, uploads once, and retries the identical post after a
   const api = {
     prepare: async () => { throw new Error("not used"); },
     sign: async () => { throw new Error("not used"); },
-    setThumbnails: async () => ({}),
     post: async (draft: PostInput, requestedMonth: string) => {
       assert.equal(requestedMonth, month);
       drafts.push(draft);
@@ -321,7 +320,6 @@ test("composer rejects invalid drafts before uploading and supports text-only po
   const api = {
     prepare: async () => { throw new Error("not used"); },
     sign: async () => { throw new Error("not used"); },
-    setThumbnails: async () => ({}),
     post: async (draft: PostInput, requestedMonth: string) => {
       saves++;
       assert.equal(requestedMonth, month);
@@ -341,7 +339,6 @@ test("composer never associates already uploaded previous-month media with the n
   const api = {
     prepare: async () => { throw new Error("not used"); },
     sign: async () => { throw new Error("not used"); },
-    setThumbnails: async () => ({}),
     post: async (): Promise<Post> => { throw new Error("must not save"); },
   };
   const uploader = new MediaUploader(api, { month: "2025-12" });
@@ -358,7 +355,6 @@ test("cancelled media uploads never publish an unintended text-only update", asy
   const api = {
     prepare: async () => { throw new Error("not used"); },
     sign: async () => { throw new Error("not used"); },
-    setThumbnails: async () => ({}),
     post: async (): Promise<Post> => { saves++; return post(); },
   };
   const uploader = new MediaUploader(api, { month });
