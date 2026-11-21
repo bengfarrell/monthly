@@ -205,7 +205,7 @@ export class MonthlyFeed extends LitElement {
               ${posts.map(post => html`<article class="monthly-post" id=${this.postViewer ? `${this.postPrefix}${post.id}` : nothing}
                 tabindex=${this.postViewer ? "-1" : nothing}>
                 <p class="monthly-post-text">${post.text}</p>
-                <div class="monthly-post-media">${post.media.map((item, index) => {
+                <div class=${post.media.length > 1 ? "monthly-post-media monthly-post-media-multiple" : "monthly-post-media"}>${post.media.map((item, index) => {
                   const type = mediaType(item.key);
                   const name = item.key.split("/").at(-1)!;
                   const thumbnail = firstThumbnail(item);
@@ -216,10 +216,11 @@ export class MonthlyFeed extends LitElement {
                       src=${item.url} poster=${thumbnail?.url ?? nothing} aria-label=${name} controls preload=${thumbnail ? "none" : "metadata"}></video>` :
                       type?.startsWith("audio/") ? html`<audio class="monthly-preview" data-media-key=${item.key}
                         src=${item.url} aria-label=${name} controls preload="metadata"></audio>` : nothing;
-                  return this.postViewer ? html`<div class="monthly-post-attachment">${media}
-                    <button class="monthly-post-expand" type="button" aria-label=${`Expand ${label} with ${type?.split("/")[0]}: ${name}`}
+                  return html`<div class=${type?.startsWith("audio/") ? "monthly-post-attachment monthly-post-attachment-audio" : "monthly-post-attachment"}>${media}
+                    ${this.postViewer ? html`<button class="monthly-post-expand" type="button" aria-label=${`Expand ${label} with ${type?.split("/")[0]}: ${name}`}
                       aria-haspopup="dialog" @click=${(event: MouseEvent) => this.onPostClick(event, post, index)}>${expandIcon} Expand</button>
-                  </div>` : media;
+                    ` : nothing}
+                  </div>`;
                 })}</div>
                 <time class="monthly-post-date" datetime=${post.created}>${new Date(post.created).toLocaleString()}</time>
                 <ul class="monthly-post-tags" aria-label="Tags">${post.tags.map(tag => html`<li>#${tag}</li>`)}</ul>

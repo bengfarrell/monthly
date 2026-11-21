@@ -305,8 +305,19 @@ Every card, including text-only posts, has a **View post** link (or **View memo*
 with the example label). Images also open on click/tap; each attachment has a
 keyboard-accessible **Expand** button. The native modal displays the full
 plain-text message, UTC date, bordered tags and all attachments, with readable
-text beside media on desktop and stacked on mobile. Images and per-asset
-**Open original** links use original URLs, not thumbnails. Videos retain their
+text beside media on desktop and stacked on mobile. Multiple images/videos form
+a two-column grid in both cards and the expanded post; audio spans the full row,
+and all assets retain their stored order. The expanded post uses image thumbnails
+when available rather than downloading every full-size image.
+
+Click an expanded image, or use an asset's **Enlarge** button, to focus on that
+asset within the same modal. Images then load their original resolution.
+**Previous asset** / **Next asset** navigate in order; arrow keys work from the
+asset navigation or image button without interfering with native player controls.
+**Back to post** (or **Back to memo**) and Escape return to the full post;
+a second Escape closes it. Asset navigation leaves the post's shareable URL
+unchanged. Nonselected players pause, and navigating preserves player positions.
+Per-asset **Open original** links always use original URLs. Videos retain their
 thumbnail/legacy posters and audio/video have native controls without autoplay.
 Unselected players use `preload="none"`. Opening pauses inline players and
 closing transfers available playback positions, stops/releases expanded
@@ -317,7 +328,7 @@ links fetch **only the linked month's JSON separately**, without replacing or
 extending the grid. Opening from the grid sets a shareable URL. Back closes the
 viewer; sharing uses the browser's address bar, with no separate permalink
 control in the viewer header. Forward reopens the
-viewer; Close, Escape and backdrop dismissal return to
+viewer; Close, Escape from the full-post overview and backdrop dismissal return to
 the current grid. Closing a direct link removes the month and post fragment
 without navigating away. Invalid, missing or failed links show explicit status
 messages. Disabling the viewer or disconnecting the element cleans up players,

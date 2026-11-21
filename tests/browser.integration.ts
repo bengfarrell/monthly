@@ -63,7 +63,7 @@ test("opt-in post viewer supports historical links, current grids, media, histor
       id, created: `${month}-01T00:00:00.000Z`, text: "Full memo\n<script>window.injected = true</script>",
       tags: ["memo", "photo"], media: attachments.map(name => media(month, name)),
     });
-    const old = post("2025-03", id, ["original.jpg", "video.webm", "audio.wav"]);
+    const old = post("2025-03", id, ["original.jpg", "video.webm", "audio.wav", "second.jpg"]);
     const html = (enabled = true) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
       <link rel="icon" href="data:,"><link rel="stylesheet" href="/monthly.css"></head>
       <body><monthly-feed style="font:16px/1.5 system-ui" base-url="${cdn}" ${enabled ? 'post-viewer post-prefix="note-" post-label="Memo"' : ""}></monthly-feed>
@@ -117,13 +117,47 @@ test("opt-in post viewer supports historical links, current grids, media, histor
     assert.equal(await page.locator(".monthly-post-viewer-text").textContent(), old.text);
     assert.equal(await page.evaluate(() => "injected" in window), false);
     assert.deepEqual(await page.locator(".monthly-post-viewer-tags li").allTextContents(), ["#memo", "#photo"]);
-    assert.equal(await page.locator(".monthly-post-viewer-media figure").count(), 3);
+    assert.equal(await page.locator(".monthly-post-viewer-media figure").count(), 4);
     assert.equal(await page.locator(".monthly-post-viewer-heading a").count(), 0);
-    assert.equal(await page.locator(".monthly-post-viewer-media figcaption a").count(), 3);
-    assert.equal(await page.locator(".monthly-post-viewer-media img").getAttribute("src"), old.media[0].url);
-    assert.equal(await page.locator(".monthly-post-viewer-media video").getAttribute("poster"), old.media[1].thumbnails?.["960x540"].url);
+    assert.equal(await page.locator(".monthly-post-viewer-media figcaption a").count(), 4);
+    assert.equal(await page.locator(".monthly-post-viewer-media img").first().getAttribute("src"), old.media[0].thumbnails?.["960x540"].url);
+    assert.equal(requests.includes(old.media[0].url), false);
+    assert.equal(requests.includes(old.media[3].url), false);
     assert.equal(requests.includes(old.media[1].url), false);
     assert.equal(requests.includes(old.media[2].url), false);
+    assert.equal(await page.locator(".monthly-post-viewer-media").evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length), 2);
+    assert.equal(await page.locator(".monthly-post-media").first().evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length), 2);
+    const tile = await page.locator(".monthly-post-media img").first().evaluate(node => ({
+      width: node.getBoundingClientRect().width, height: node.getBoundingClientRect().height,
+    }));
+    assert.ok(Math.abs(tile.width / tile.height - 4 / 3) < 0.01);
+    assert.equal(await page.locator(".monthly-post-attachment-audio").first().evaluate(node => getComputedStyle(node).gridColumn), "1 / -1");
+    const originalPostUrl = page.url();
+    const enlargeImage = page.getByRole("button", { name: "Enlarge image: original.jpg", exact: true });
+    await enlargeImage.focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "Back to memo" }).waitFor();
+    assert.equal(await page.locator(".monthly-post-viewer-media figure:visible").count(), 1);
+    assert.equal(await page.locator(".monthly-post-viewer-media img").first().getAttribute("src"), old.media[0].url);
+    assert.equal(await page.locator(".monthly-post-viewer-copy").isHidden(), true);
+    assert.equal(await page.getByRole("button", { name: "Previous asset" }).isDisabled(), true);
+    assert.equal(page.url(), originalPostUrl);
+    await page.keyboard.press("ArrowRight");
+    await page.getByRole("status").filter({ hasText: "Asset 2 of 4" }).waitFor();
+    await page.getByRole("button", { name: "Next asset" }).click();
+    await page.getByRole("status").filter({ hasText: "Asset 3 of 4" }).waitFor();
+    await page.getByRole("button", { name: "Next asset" }).click();
+    await page.getByRole("status").filter({ hasText: "Asset 4 of 4" }).waitFor();
+    assert.equal(await page.getByRole("button", { name: "Next asset" }).isDisabled(), true);
+    assert.equal(await page.locator(".monthly-post-viewer-media img").last().getAttribute("src"), old.media[3].url);
+    assert.equal(page.url(), originalPostUrl);
+    await page.keyboard.press("Escape");
+    assert.equal(await page.locator("dialog").evaluate(node => node instanceof HTMLDialogElement && node.open), true);
+    assert.equal(await page.locator(".monthly-post-viewer-media figure:visible").count(), 4);
+    assert.equal(await enlargeImage.evaluate(node => node === document.activeElement), true);
+    assert.equal(await page.locator(".monthly-post-viewer-media img").last().getAttribute("src"), old.media[3].thumbnails?.["960x540"].url);
+    assert.equal(await page.locator(".monthly-post-viewer-copy").isVisible(), true);
+    assert.equal(await page.locator(".monthly-post-viewer-media video").getAttribute("poster"), old.media[1].thumbnails?.["960x540"].url);
     await page.getByRole("button", { name: "Close memo viewer" }).click();
     await waitClosed();
     assert.equal(page.url(), "https://monthly.test/updates/");
@@ -191,6 +225,16 @@ test("opt-in post viewer supports historical links, current grids, media, histor
       if (!(node instanceof HTMLAudioElement)) throw new Error("Expected expanded audio.");
       await node.play(); node.currentTime = 0.75; node.pause();
     });
+    await page.getByRole("button", { name: "Enlarge audio: audio.wav", exact: true }).click();
+    assert.equal(await page.locator(".monthly-post-viewer-media figure:visible").count(), 1);
+    assert.equal(await expanded.evaluate(node => node instanceof HTMLAudioElement && node.currentTime), 0.75);
+    await expanded.evaluate(async node => { await (node as HTMLAudioElement).play(); });
+    await page.getByRole("button", { name: "Previous asset" }).click();
+    assert.equal(await expanded.evaluate(node => node instanceof HTMLAudioElement && node.paused), true);
+    await page.getByRole("button", { name: "Next asset" }).click();
+    assert.ok(await expanded.evaluate(node => node instanceof HTMLAudioElement && node.currentTime >= 0.75));
+    await expanded.evaluate(node => { (node as HTMLAudioElement).currentTime = 0.75; });
+    await page.getByRole("button", { name: "Back to memo" }).click();
     await page.getByRole("button", { name: "Close memo viewer" }).click(); await waitClosed();
     await page.waitForFunction(() => !location.hash);
     assert.ok(Math.abs(await preview.evaluate(node => {
@@ -203,6 +247,10 @@ test("opt-in post viewer supports historical links, current grids, media, histor
     await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open);
     assert.equal(await page.locator(".monthly-post-viewer-content").evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length), 1);
     assert.equal(await page.locator("dialog").evaluate(node => node.scrollWidth <= node.clientWidth), true);
+    await page.getByRole("button", { name: "Enlarge image: second.jpg", exact: true }).tap();
+    assert.equal(await page.locator("dialog").evaluate(node => node.scrollWidth <= node.clientWidth), true);
+    assert.equal(await page.locator(".monthly-post-viewer-media figure:visible").count(), 1);
+    await page.getByRole("button", { name: "Back to memo" }).tap();
     assert.equal(await page.locator(".monthly-post-viewer-tags li").first().evaluate(node => getComputedStyle(node).borderTopStyle), "solid");
     await page.locator(".monthly-post-viewer-media video").evaluate(async node => {
       if (!(node instanceof HTMLVideoElement)) throw new Error("Expected expanded video.");
@@ -234,6 +282,14 @@ test("opt-in post viewer supports historical links, current grids, media, histor
     await page.goto("https://monthly.test/plain/?month=2025-03#note-missing");
     await page.locator(".monthly-post").first().waitFor();
     assert.equal(await page.locator("dialog, .monthly-post-expand, .monthly-post-open").count(), 0);
+    await page.evaluate(async second => {
+      const feed = document.querySelector("monthly-feed")!;
+      const post = feed.observed!.state.posts[0];
+      feed.observed!.setState({ posts: [{ ...post, media: [post.media[0], second] }] });
+      await feed.updateComplete;
+    }, media(months[0], "second.jpg"));
+    assert.equal(await page.locator(".monthly-post-media img").count(), 2);
+    assert.equal(await page.locator(".monthly-post-media").evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length), 2);
     await page.evaluate(() => { document.querySelector("monthly-feed")!.postViewer = true; });
     await page.locator(".monthly-post-open").first().waitFor();
     await page.locator(".monthly-post-open").first().click();
