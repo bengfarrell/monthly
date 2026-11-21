@@ -126,7 +126,7 @@ export class MonthlyFeed extends LitElement {
     event.preventDefault();
     const target = event.currentTarget;
     const opener = target instanceof HTMLImageElement
-      ? target.parentElement?.querySelector<HTMLButtonElement>(".monthly-post-expand") ?? this
+      ? target.closest(".monthly-post")?.querySelector<HTMLAnchorElement>(".monthly-post-open") ?? this
       : target instanceof HTMLElement ? target : undefined;
     this.openPost(post, opener, selectedIndex);
   }
@@ -217,15 +217,12 @@ export class MonthlyFeed extends LitElement {
                       type?.startsWith("audio/") ? html`<audio class="monthly-preview" data-media-key=${item.key}
                         src=${item.url} aria-label=${name} controls preload="metadata"></audio>` : nothing;
                   return html`<div class=${type?.startsWith("audio/") ? "monthly-post-attachment monthly-post-attachment-audio" : "monthly-post-attachment"}>${media}
-                    ${this.postViewer ? html`<button class="monthly-post-expand" type="button" aria-label=${`Expand ${label} with ${type?.split("/")[0]}: ${name}`}
-                      aria-haspopup="dialog" @click=${(event: MouseEvent) => this.onPostClick(event, post, index)}>${expandIcon} Expand</button>
-                    ` : nothing}
                   </div>`;
                 })}</div>
                 <time class="monthly-post-date" datetime=${post.created}>${new Date(post.created).toLocaleString()}</time>
                 <ul class="monthly-post-tags" aria-label="Tags">${post.tags.map(tag => html`<li>#${tag}</li>`)}</ul>
                 ${this.postViewer ? html`<a class="monthly-post-open" href=${this.link(post).href} aria-haspopup="dialog"
-                  @click=${(event: MouseEvent) => this.onPostClick(event, post)}>View ${label}</a>` : nothing}
+                  @click=${(event: MouseEvent) => this.onPostClick(event, post)}>${expandIcon} Expand ${label}</a>` : nothing}
               </article>`)}
             </div>
           </section>`;

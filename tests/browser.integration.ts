@@ -196,7 +196,7 @@ test("opt-in post viewer supports historical links, current grids, media, histor
       Boolean(document.querySelector("dialog")?.contains(document.activeElement))), true);
     await page.keyboard.press("Escape"); await waitClosed();
     await page.waitForFunction(() => !location.hash);
-    assert.equal(await page.evaluate(() => document.activeElement?.className), "monthly-post-expand");
+    assert.equal(await page.evaluate(() => document.activeElement?.className), "monthly-post-open");
 
     await page.evaluate(async () => {
       const feed = document.querySelector("monthly-feed")!;
@@ -204,7 +204,9 @@ test("opt-in post viewer supports historical links, current grids, media, histor
       await feed.updateComplete;
     });
     assert.equal(await page.locator(".monthly-post-open").count(), 6);
-    assert.equal(await page.locator(".monthly-post-expand").count(), 9);
+    assert.equal(await page.locator(".monthly-post-expand").count(), 0);
+    assert.deepEqual(await page.locator(".monthly-post").evaluateAll(posts =>
+      posts.map(post => post.querySelectorAll(".monthly-post-open").length)), [1, 1, 1, 1, 1, 1]);
     await page.locator(`#note-${textId} .monthly-post-open`).click();
     await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open);
     assert.equal(await page.locator(".monthly-post-viewer-media figure").count(), 0);
@@ -217,7 +219,8 @@ test("opt-in post viewer supports historical links, current grids, media, histor
       if (!(node instanceof HTMLAudioElement)) throw new Error("Expected inline audio.");
       await node.play(); node.currentTime = 0.5; node.pause();
     });
-    await recentArticle.locator(".monthly-post-expand").nth(2).click();
+    await recentArticle.getByRole("link", { name: "Expand memo" }).click();
+    await page.getByRole("button", { name: "Enlarge audio: audio.wav", exact: true }).click();
     const expanded = page.locator(".monthly-post-viewer-media audio");
     await page.waitForFunction(() => document.querySelector<HTMLAudioElement>(".monthly-post-viewer-media audio")?.currentTime === 0.5);
     assert.equal(await expanded.evaluate(node => node instanceof HTMLAudioElement && node.paused), true);
@@ -225,7 +228,6 @@ test("opt-in post viewer supports historical links, current grids, media, histor
       if (!(node instanceof HTMLAudioElement)) throw new Error("Expected expanded audio.");
       await node.play(); node.currentTime = 0.75; node.pause();
     });
-    await page.getByRole("button", { name: "Enlarge audio: audio.wav", exact: true }).click();
     assert.equal(await page.locator(".monthly-post-viewer-media figure:visible").count(), 1);
     assert.equal(await expanded.evaluate(node => node instanceof HTMLAudioElement && node.currentTime), 0.75);
     await expanded.evaluate(async node => { await (node as HTMLAudioElement).play(); });

@@ -301,9 +301,9 @@ The consumer owns the page route. For a feed embedded at `/memos/`, the example
 preserves URLs such as `/memos/?month=2025-03#note-UUID`. Use one URL-managing
 feed per page.
 
-Every card, including text-only posts, has a **View post** link (or **View memo**
-with the example label). Images also open on click/tap; each attachment has a
-keyboard-accessible **Expand** button. The native modal displays the full
+Every card, including text-only posts, has one keyboard-accessible **Expand post**
+link (or **Expand memo** with the example label), not separate expansion buttons
+for each attachment. Images also open on click/tap. The native modal displays the full
 plain-text message, UTC date, bordered tags and all attachments, with readable
 text beside media on desktop and stacked on mobile. Multiple images/videos form
 a two-column grid in both cards and the expanded post; audio spans the full row,

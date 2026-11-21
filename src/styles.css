@@ -150,20 +150,19 @@ monthly-feed { container-type: inline-size; }
 .monthly-post-tags { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: .5rem; list-style: none; padding: 0; font-size: var(--wa-font-size-xs); color: var(--wa-color-text-quiet); text-align: left; }
 .monthly-post-tags > li { min-width: 0; padding: .2rem .5rem; border: 1px solid var(--monthly-border, var(--wa-color-surface-border)); border-radius: var(--monthly-radius, var(--wa-border-radius-s)); }
 .monthly-post[tabindex="-1"]:focus, monthly-feed[tabindex="-1"]:focus { outline: none; }
-.monthly-post-open { display: inline-block; margin-top: 1rem; font-size: .8125rem; }
-.monthly-post-open:focus-visible, .monthly-post-expand:focus-visible, .monthly-post-viewer :is(a, button):focus-visible {
+.monthly-post-open:focus-visible, .monthly-post-viewer :is(a, button):focus-visible {
   outline: 2px solid var(--monthly-viewer-focus, var(--wa-color-focus));
   outline-offset: 4px;
 }
 .monthly-expandable-image { cursor: zoom-in; }
 .monthly-post-attachment { display: grid; gap: 1rem; min-width: 0; }
-.monthly-post-expand {
-  display: inline-flex; align-items: center; justify-self: end; gap: .375rem; margin-top: -.5rem;
+.monthly-post-open {
+  display: inline-flex; align-items: center; gap: .375rem; margin-top: 1rem; text-decoration: none;
   padding: .375rem .625rem; border: 1px solid var(--monthly-border, var(--wa-color-surface-border));
   border-radius: var(--monthly-radius, .375rem); background: var(--wa-color-surface-default);
   color: var(--wa-color-text-quiet); font: inherit; font-size: .75rem; cursor: pointer;
 }
-.monthly-post-expand:hover { background: var(--wa-color-surface-lowered); color: var(--wa-color-text-normal); }
+.monthly-post-open:hover { background: var(--wa-color-surface-lowered); color: var(--wa-color-text-normal); }
 .monthly-post-viewer {
   box-sizing: border-box; width: calc(100% - 2rem); max-width: 96rem; max-height: calc(100dvh - 2rem);
   margin: auto; padding: 1rem; border: 1px solid var(--monthly-viewer-border, var(--wa-color-surface-border));
@@ -223,7 +222,7 @@ monthly-feed { container-type: inline-size; }
 @media (max-width: 639px) {
   .monthly-post-viewer-heading { align-items: flex-start; flex-direction: column; }
   .monthly-post-viewer-actions { width: 100%; justify-content: flex-end; }
-  .monthly-post-expand { min-height: 2.75rem; }
+  .monthly-post-open { min-height: 2.75rem; }
 }
 @container (min-width: 46rem) {
   .monthly-feed-posts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
