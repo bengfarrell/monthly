@@ -13,6 +13,245 @@ import { LOCAL_BUCKET, LOCAL_PASSWORD, LOCAL_USERNAME, loadAssets } from "../dev
 import type { MediaPage, SignedUpload, UploadGrant } from "../src/core/api.js";
 import { ListObjectsV2Command, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { MockS3 } from "../dev/mock-s3.js";
+import { feedMonths } from "../src/shared/posts.js";
+
+test("opt-in post viewer supports historical links, current grids, media, history and lifecycle cleanup", { timeout: 60000 }, async () => {
+  const browser = await chromium.launch({ headless: true, ...(process.env.MONTHLY_BROWSER_CHANNEL && { channel: process.env.MONTHLY_BROWSER_CHANNEL }) });
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, hasTouch: true });
+    const errors: string[] = [];
+    const requests: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    const video = Buffer.from(await page.evaluate(async () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 320; canvas.height = 180;
+      const context = canvas.getContext("2d")!;
+      const stream = canvas.captureStream(15);
+      const recorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp8" });
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = event => chunks.push(event.data);
+      const done = new Promise<Blob>(resolve => { recorder.onstop = () => resolve(new Blob(chunks)); });
+      recorder.start();
+      const timer = setInterval(() => {
+        context.fillStyle = "blue"; context.fillRect(0, 0, canvas.width, canvas.height);
+      }, 30);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      recorder.stop();
+      const result = await done;
+      clearInterval(timer);
+      stream.getTracks().forEach(track => track.stop());
+      return [...new Uint8Array(await result.arrayBuffer())];
+    }));
+    const audio = Buffer.alloc(44 + 44100 * 4);
+    audio.write("RIFF", 0); audio.writeUInt32LE(audio.length - 8, 4); audio.write("WAVEfmt ", 8);
+    audio.writeUInt32LE(16, 16); audio.writeUInt16LE(1, 20); audio.writeUInt16LE(1, 22);
+    audio.writeUInt32LE(44100, 24); audio.writeUInt32LE(88200, 28); audio.writeUInt16LE(2, 32);
+    audio.writeUInt16LE(16, 34); audio.write("data", 36); audio.writeUInt32LE(audio.length - 44, 40);
+    const image = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9N8AAAAASUVORK5CYII=", "base64");
+    const months = feedMonths();
+    const id = "bb3ff98b-df57-4bcb-81af-88ab6de0e3a8";
+    const recentId = "11111111-1111-4111-8111-111111111111";
+    const textId = "21111111-1111-4111-8111-111111111111";
+    const cdn = "https://feed.monthly.test/uploads/";
+    const media = (month: string, name: string) => {
+      const key = `${month.replace("-", "/")}/${name}`;
+      const thumbnail = { key: `${key}.thumb-960x540.jpg`, size: 123, url: `${cdn}${key}.thumb-960x540.jpg` };
+      return { key, size: 1000, url: `${cdn}${key}`,
+        ...(/\.(jpg|webm)$/.test(name) && { thumbnails: { "960x540": thumbnail } }) };
+    };
+    const post = (month: string, id: string, attachments: string[] = []) => ({
+      id, created: `${month}-01T00:00:00.000Z`, text: "Full memo\n<script>window.injected = true</script>",
+      tags: ["memo", "photo"], media: attachments.map(name => media(month, name)),
+    });
+    const old = post("2025-03", id, ["original.jpg", "video.webm", "audio.wav"]);
+    const html = (enabled = true) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+      <link rel="icon" href="data:,"><link rel="stylesheet" href="/monthly.css"></head>
+      <body><monthly-feed style="font:16px/1.5 system-ui" base-url="${cdn}" ${enabled ? 'post-viewer post-prefix="note-" post-label="Memo"' : ""}></monthly-feed>
+      <script type="module" src="/monthly.js"></script></body></html>`;
+    let release: (() => void) | undefined;
+    await page.route("**/*", async route => {
+      const request = route.request();
+      const url = new URL(request.url());
+      if (url.origin === "https://monthly.test") {
+        if (url.pathname === "/monthly.js") return route.fulfill({ contentType: "text/javascript", body: readFileSync("dist/monthly.js") });
+        if (url.pathname === "/monthly.css") return route.fulfill({ contentType: "text/css", body: readFileSync("dist/monthly.css") });
+        return route.fulfill({ contentType: "text/html", body: html(url.pathname !== "/plain/") });
+      }
+      if (!url.href.startsWith(cdn)) return route.abort();
+      requests.push(url.href);
+      if (url.pathname.endsWith("/posts.json")) {
+        assert.equal(request.headers().authorization, undefined);
+        const month = url.pathname.split("/").slice(-3, -1).join("-");
+        if (month === "2025-04") {
+          await new Promise<void>(resolve => { release = resolve; });
+          return route.fulfill({ json: [], headers: { "Access-Control-Allow-Origin": "*" } });
+        }
+        if (month === "2025-05") return route.fulfill({ status: 503, body: "Unavailable", headers: { "Access-Control-Allow-Origin": "*" } });
+        const index = months.indexOf(month);
+        const posts = month === "2025-03" ? [old] : index < 0 ? [] : [
+          post(month, index === 0 ? recentId : `${index + 3}1111111-1111-4111-8111-111111111111`, ["original.jpg", "video.webm", "audio.wav"]),
+          post(month, index === 0 ? textId : `${index + 6}1111111-1111-4111-8111-111111111111`),
+        ];
+        return route.fulfill({ json: posts, headers: { "Access-Control-Allow-Origin": "*" } });
+      }
+      const body = url.pathname.endsWith(".webm") ? video : url.pathname.endsWith(".wav") ? audio : image;
+      const contentType = url.pathname.endsWith(".webm") ? "video/webm" : url.pathname.endsWith(".wav") ? "audio/wav" : "image/png";
+      const headers: Record<string, string> = { "Accept-Ranges": "bytes", "Access-Control-Allow-Origin": "*" };
+      const range = /^bytes=(\d+)-(\d*)$/.exec(request.headers().range ?? "");
+      if (range) {
+        const start = Number(range[1]), end = Math.min(Number(range[2] || body.length - 1), body.length - 1);
+        headers["Content-Range"] = `bytes ${start}-${end}/${body.length}`;
+        return route.fulfill({ status: 206, contentType, headers, body: body.subarray(start, end + 1) });
+      }
+      return route.fulfill({ contentType, headers, body });
+    });
+    const waitClosed = () => page.waitForFunction(() => {
+      const dialog = document.querySelector<HTMLDialogElement>("dialog");
+      return !dialog?.open && !document.querySelector("[data-post-viewer-content]")?.children.length;
+    });
+    await page.goto(`https://monthly.test/updates/?month=2025-03#note-${id}`);
+    await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open && document.querySelectorAll(".monthly-post").length === 6);
+    assert.deepEqual(await page.locator(".monthly-feed-month-title time").evaluateAll(nodes => nodes.map(node => node.getAttribute("datetime"))), months);
+    assert.equal(requests.filter(url => url.endsWith("/2025/03/posts.json")).length, 1);
+    assert.equal(requests.some(url => url.includes("/2025/02/")), false);
+    assert.equal(await page.locator(".monthly-post-viewer-text").textContent(), old.text);
+    assert.equal(await page.evaluate(() => "injected" in window), false);
+    assert.deepEqual(await page.locator(".monthly-post-viewer-tags li").allTextContents(), ["#memo", "#photo"]);
+    assert.equal(await page.locator(".monthly-post-viewer-media figure").count(), 3);
+    assert.equal(await page.locator(".monthly-post-viewer-media img").getAttribute("src"), old.media[0].url);
+    assert.equal(await page.locator(".monthly-post-viewer-media video").getAttribute("poster"), old.media[1].thumbnails?.["960x540"].url);
+    assert.equal(requests.includes(old.media[1].url), false);
+    assert.equal(requests.includes(old.media[2].url), false);
+    await page.getByRole("button", { name: "Close memo viewer" }).click();
+    await waitClosed();
+    assert.equal(page.url(), "https://monthly.test/updates/");
+    assert.equal(await page.evaluate(() => document.activeElement?.tagName), "MONTHLY-FEED");
+    assert.equal(await page.locator(".monthly-feed-posts").first().evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length), 3);
+    const recentArticle = page.locator(`#note-${recentId}`);
+    await recentArticle.locator(".monthly-post-open").click();
+    await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open);
+    assert.equal(new URL(page.url()).hash, `#note-${recentId}`);
+    await page.goBack(); await waitClosed();
+    await page.goForward();
+    await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open);
+    await page.keyboard.press("Escape"); await waitClosed();
+    await page.waitForFunction(() => !location.hash);
+    assert.equal(await page.evaluate(() => document.activeElement?.className), "monthly-post-open");
+    await recentArticle.locator("img.monthly-preview").click();
+    await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open);
+    const staleImage = await page.locator(".monthly-post-viewer-media img").elementHandle();
+    await staleImage!.evaluate(node => node.dispatchEvent(new Event("error")));
+    await page.getByRole("status").filter({ hasText: "opening its original" }).waitFor();
+    await page.evaluate(() => {
+      const feed = document.querySelector("monthly-feed")!;
+      feed.querySelector<HTMLDialogElement>("dialog")!.close();
+      feed.openPost(feed.observed!.state.posts[0], feed);
+    });
+    await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open);
+    await staleImage!.evaluate(node => node.dispatchEvent(new Event("error")));
+    assert.equal(await page.locator("[data-post-viewer-error]").isHidden(), true);
+    await page.mouse.click(2, 2);
+    await waitClosed();
+    await page.waitForFunction(() => !location.hash);
+    await recentArticle.locator("img.monthly-preview").click();
+    await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open);
+    await page.keyboard.press("Tab");
+    assert.equal(await page.evaluate(() => document.activeElement?.tagName === "BODY" ||
+      Boolean(document.querySelector("dialog")?.contains(document.activeElement))), true);
+    await page.keyboard.press("Escape"); await waitClosed();
+    await page.waitForFunction(() => !location.hash);
+    assert.equal(await page.evaluate(() => document.activeElement?.className), "monthly-post-expand");
+
+    await page.evaluate(async () => {
+      const feed = document.querySelector("monthly-feed")!;
+      feed.observed!.setState({ posts: feed.observed!.state.posts.map(post => ({ ...post, text: post.text + "\nUpdated" })) });
+      await feed.updateComplete;
+    });
+    assert.equal(await page.locator(".monthly-post-open").count(), 6);
+    assert.equal(await page.locator(".monthly-post-expand").count(), 9);
+    await page.locator(`#note-${textId} .monthly-post-open`).click();
+    await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open);
+    assert.equal(await page.locator(".monthly-post-viewer-media figure").count(), 0);
+    assert.match(await page.locator(".monthly-post-viewer-text").textContent() ?? "", /Updated/);
+    await page.getByRole("button", { name: "Close memo viewer" }).click(); await waitClosed();
+    await page.waitForFunction(() => !location.hash);
+
+    const preview = recentArticle.locator("audio");
+    await preview.evaluate(async node => {
+      if (!(node instanceof HTMLAudioElement)) throw new Error("Expected inline audio.");
+      await node.play(); node.currentTime = 0.5; node.pause();
+    });
+    await recentArticle.locator(".monthly-post-expand").nth(2).click();
+    const expanded = page.locator(".monthly-post-viewer-media audio");
+    await page.waitForFunction(() => document.querySelector<HTMLAudioElement>(".monthly-post-viewer-media audio")?.currentTime === 0.5);
+    assert.equal(await expanded.evaluate(node => node instanceof HTMLAudioElement && node.paused), true);
+    await expanded.evaluate(async node => {
+      if (!(node instanceof HTMLAudioElement)) throw new Error("Expected expanded audio.");
+      await node.play(); node.currentTime = 0.75; node.pause();
+    });
+    await page.getByRole("button", { name: "Close memo viewer" }).click(); await waitClosed();
+    await page.waitForFunction(() => !location.hash);
+    assert.ok(Math.abs(await preview.evaluate(node => {
+      if (!(node instanceof HTMLAudioElement)) throw new Error("Expected inline audio.");
+      return node.currentTime;
+    }) - 0.75) < 0.05);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`https://monthly.test/updates/?month=2025-03#note-${id}`);
+    await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open);
+    assert.equal(await page.locator(".monthly-post-viewer-content").evaluate(node => getComputedStyle(node).gridTemplateColumns.split(" ").length), 1);
+    assert.equal(await page.locator("dialog").evaluate(node => node.scrollWidth <= node.clientWidth), true);
+    assert.equal(await page.locator(".monthly-post-viewer-tags li").first().evaluate(node => getComputedStyle(node).borderTopStyle), "solid");
+    await page.locator(".monthly-post-viewer-media video").evaluate(async node => {
+      if (!(node instanceof HTMLVideoElement)) throw new Error("Expected expanded video.");
+      await node.play();
+    });
+    await page.locator(".monthly-post-viewer-media audio").evaluate(async node => {
+      if (!(node instanceof HTMLAudioElement)) throw new Error("Expected expanded audio.");
+      await node.play();
+    });
+    const assets = await page.locator(".monthly-post-viewer-media video, .monthly-post-viewer-media audio").elementHandles();
+    await page.locator("dialog").evaluate(node => { node.scrollTop = node.scrollHeight; });
+    await page.getByRole("button", { name: "Close memo viewer" }).tap(); await waitClosed();
+    for (const asset of assets) assert.equal(await asset.evaluate(node => node instanceof HTMLMediaElement && node.paused && !node.getAttribute("src")), true);
+    assert.equal(await page.evaluate(() => document.documentElement.style.overflow), "");
+
+    await page.goto("https://monthly.test/updates/?month=2025-04#note-missing");
+    await page.waitForFunction(() => document.querySelector(".monthly-post-status")?.textContent?.includes("Loading"));
+    await page.evaluate(() => { history.replaceState(null, "", "/updates/"); dispatchEvent(new HashChangeEvent("hashchange")); });
+    release!();
+    await page.waitForFunction(() => !document.querySelector(".monthly-post-status"));
+    assert.equal(await page.locator("dialog").evaluate(node => node instanceof HTMLDialogElement && node.open), false);
+    await page.goto("https://monthly.test/updates/?month=2025-05#note-missing");
+    await page.getByRole("alert").filter({ hasText: "could not be loaded" }).waitFor();
+    await page.goto("https://monthly.test/updates/?month=2025-13#note-missing");
+    await page.getByRole("alert").filter({ hasText: "invalid month" }).waitFor();
+    await page.goto("https://monthly.test/updates/?month=2025-06#note-missing");
+    await page.getByRole("alert").filter({ hasText: "no longer available" }).waitFor();
+
+    await page.goto("https://monthly.test/plain/?month=2025-03#note-missing");
+    await page.locator(".monthly-post").first().waitFor();
+    assert.equal(await page.locator("dialog, .monthly-post-expand, .monthly-post-open").count(), 0);
+    await page.evaluate(() => { document.querySelector("monthly-feed")!.postViewer = true; });
+    await page.locator(".monthly-post-open").first().waitFor();
+    await page.locator(".monthly-post-open").first().click();
+    await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open);
+    await page.evaluate(() => { document.querySelector("monthly-feed")!.postViewer = false; });
+    await page.waitForFunction(() => !document.querySelector("dialog"));
+    assert.equal(await page.evaluate(() => document.documentElement.style.overflow), "");
+    await page.evaluate(async () => {
+      const feed = document.querySelector("monthly-feed")!;
+      feed.postViewer = true;
+      await feed.updateComplete;
+      feed.remove();
+      document.body.append(feed);
+    });
+    await page.waitForFunction(() => document.querySelector<HTMLDialogElement>("dialog")?.open);
+    await page.evaluate(() => document.querySelector("monthly-feed")!.remove());
+    assert.equal(await page.evaluate(() => document.documentElement.style.overflow), "");
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});
 
 type UploadInput = UploadCommand["input"] & {
   PartNumber?: number; ContentLength?: number; ContentType?: string;

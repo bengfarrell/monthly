@@ -279,6 +279,65 @@ template, using the same script and stylesheet:
 <monthly-feed base-url="https://cdn.example.com/media/"></monthly-feed>
 ```
 
+### Optional full-post viewer and deep links
+
+The default feed remains grid-only: it does not change the page URL, add
+expansion controls, or load linked historical months. Enable the full-post
+viewer explicitly:
+
+```html
+<monthly-feed
+  base-url="https://cdn.example.com/media/"
+  post-viewer
+  post-label="Memo"
+  post-prefix="note-">
+</monthly-feed>
+```
+
+`post-label` defaults to `Post` and controls the viewer and link labels.
+`post-prefix` defaults to `post-` and controls the fragment/card IDs; it must
+start with a letter and contain only letters, numbers, underscores or hyphens.
+The consumer owns the page route. For a feed embedded at `/memos/`, the example
+preserves URLs such as `/memos/?month=2025-03#note-UUID`. Use one URL-managing
+feed per page.
+
+Every card, including text-only posts, has a **View post** link (or **View memo**
+with the example label). Images also open on click/tap; each attachment has a
+keyboard-accessible **Expand** button. The native modal displays the full
+plain-text message, UTC date, bordered tags and all attachments, with readable
+text beside media on desktop and stacked on mobile. Images and per-asset
+**Open original** links use original URLs, not thumbnails. Videos retain their
+thumbnail/legacy posters and audio/video have native controls without autoplay.
+Unselected players use `preload="none"`. Opening pauses inline players and
+closing transfers available playback positions, stops/releases expanded
+players, and restores focus without automatically resuming playback.
+
+The grid still loads only its normal current three-month window. Older direct
+links fetch **only the linked month's JSON separately**, without replacing or
+extending the grid. Opening from the grid sets a shareable URL. Back closes the
+viewer and Forward reopens it; Close, Escape and backdrop dismissal return to
+the current grid. Closing a direct link removes the month and post fragment
+without navigating away. Invalid, missing or failed links show explicit status
+messages. Disabling the viewer or disconnecting the element cleans up players,
+scroll locking, listeners and pending historical requests; injected models
+remain caller-owned. No Lambda changes or new post JSON fields are needed.
+
+Viewer structure and responsive behavior ship in `monthly.css`; customize the
+light-DOM `.monthly-post-viewer*` classes and inherited variables:
+`--monthly-viewer-background`, `--monthly-viewer-color`, `--monthly-viewer-border`,
+`--monthly-viewer-muted`, `--monthly-viewer-link`, and `--monthly-viewer-focus`.
+Existing `--monthly-border` and `--monthly-radius` also apply.
+
+For links outside the feed, use the core helper
+`postUrl(post, new URL("/memos/", location.href), "note-")`; it returns a new URL
+with the month query and fragment, leaving its base URL unchanged.
+`await feed.loadPost(id, month, signal?)` reads a single validated linked post
+independently of grid state, reuses already loaded posts, returns `undefined`
+when unavailable, and rejects on invalid input, request/JSON failures or
+cancellation. `destroy()` cancels both grid and independent post requests.
+
+### Grid layout and loading
+
 The feed uses a responsive card grid: one column by default, two when its
 container reaches 46rem, and a maximum of three at 70rem. Column counts follow
 the component's available width, so embedded feeds also adapt to narrower layouts.

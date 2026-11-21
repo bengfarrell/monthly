@@ -5,7 +5,7 @@ import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { createHandler, type MediaEvent, type MediaS3Client } from "../lambda/handler.js";
 import { MockS3 } from "../dev/mock-s3.js";
 import { LOCAL_BUCKET, LOCAL_PREFIX } from "../dev/fixtures.js";
-import { MediaApi, MediaAuth, MediaUploader, PostComposer, PostFeed, feedMonths, postTags, readPosts, thumbnailKey, thumbnailInputs } from "../src/core/index.js";
+import { MediaApi, MediaAuth, MediaUploader, PostComposer, PostFeed, feedMonths, postTags, postUrl, readPosts, thumbnailKey, thumbnailInputs } from "../src/core/index.js";
 import type { Post, PostInput } from "../src/core/index.js";
 
 const now = () => new Date("2026-01-15T12:00:00.000Z");
@@ -53,6 +53,75 @@ test("hashtags merge with explicit tags, normalize Unicode, and deduplicate with
 test("feed window is exactly three UTC calendar months, including year boundaries", () => {
   assert.deepEqual(feedMonths(now()), ["2026-01", "2025-12", "2025-11"]);
   assert.deepEqual(feedMonths(new Date("2026-03-31T23:59:59Z")), ["2026-03", "2026-02", "2026-01"]);
+});
+
+test("post links use the consumer's route and configurable ID prefix without mutating the base URL", () => {
+  const item = post();
+  const base = new URL("https://example.com/memos/?other=keep#old");
+  assert.equal(postUrl(item, base, "note-").href, `https://example.com/memos/?other=keep&month=2026-01#note-${item.id}`);
+  assert.equal(base.href, "https://example.com/memos/?other=keep#old");
+  assert.equal(postUrl(item, "https://example.com/updates/").hash, `#post-${item.id}`);
+});
+
+test("historical post loading fetches one validated month independently without changing grid state", async () => {
+  const old = post("2025-03-01T00:00:00.000Z");
+  const requests: string[] = [];
+  const feed = new PostFeed({ baseUrl: "https://cdn.example.com/media/", now, fetch: async (url, options) => {
+    requests.push(String(url));
+    assert.equal(options?.credentials, "omit");
+    assert.equal(options?.headers, undefined);
+    return Response.json([old]);
+  } });
+  const before = feed.state;
+  assert.deepEqual(await feed.loadPost(old.id, "2025-03"), old);
+  assert.deepEqual(requests, ["https://cdn.example.com/media/2025/03/posts.json"]);
+  assert.equal(feed.state, before);
+  await assert.rejects(feed.loadPost(old.id, "2025-13"), /Month/);
+  assert.equal(requests.length, 1);
+});
+
+test("loaded recent posts are reused; missing historical posts and failures are explicit", async t => {
+  const warnings = t.mock.method(console, "warn", () => {});
+  const item = post();
+  let response = Response.json([item]);
+  let requests = 0;
+  const feed = new PostFeed({ baseUrl: "https://cdn.example.com/media/", now, fetch: async () => {
+    requests++;
+    return response.clone();
+  } });
+  feed.setState({ posts: [item], loaded: true });
+  assert.equal(await feed.loadPost(item.id, month), item);
+  assert.equal(await feed.loadPost(randomUUID(), month), undefined);
+  assert.equal(requests, 0);
+  response = new Response("", { status: 404 });
+  assert.equal(await feed.loadPost(randomUUID(), "2025-03"), undefined);
+  assert.equal(warnings.mock.callCount(), 1);
+  response = new Response("", { status: 503 });
+  await assert.rejects(feed.loadPost(randomUUID(), "2025-03"), /503/);
+  response = Response.json([{ ...item, created: "bad" }]);
+  await assert.rejects(feed.loadPost(item.id, "2025-03"), /timestamp/);
+  assert.deepEqual(feed.state.posts, [item]);
+});
+
+test("historical requests honor caller cancellation and destroy without affecting grid refreshes", async () => {
+  const pending: ((response: Response) => void)[] = [];
+  const feed = new PostFeed({ baseUrl: "https://cdn.example.com/media/", now,
+    fetch: () => new Promise<Response>(resolve => pending.push(resolve)) });
+  const cancel = new AbortController();
+  const old = feed.loadPost(randomUUID(), "2025-03", cancel.signal);
+  const canceled = assert.rejects(old, { name: "AbortError" });
+  cancel.abort();
+  pending[0](Response.json([]));
+  await canceled;
+  const detached = feed.loadPost(randomUUID(), "2025-04");
+  const destroyed = assert.rejects(detached, { name: "AbortError" });
+  const loading = feed.load();
+  pending.slice(2).forEach(resolve => resolve(Response.json([])));
+  await loading;
+  feed.destroy();
+  pending[1](Response.json([]));
+  await destroyed;
+  assert.equal(feed.state.loaded, true);
 });
 
 test("posting creates then appends to the same month JSON with canonical media URLs and conditional writes", async () => {

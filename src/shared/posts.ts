@@ -117,3 +117,10 @@ export function feedMonths(date = new Date()) {
   return Array.from({ length: 3 }, (_, offset) =>
     new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() - offset, 1)).toISOString().slice(0, 7));
 }
+
+export function postUrl(post: Pick<Post, "id" | "created">, base: string | URL, prefix = "post-"): URL {
+  const url = new URL(base);
+  url.searchParams.set("month", post.created.slice(0, 7));
+  url.hash = `${prefix}${post.id}`;
+  return url;
+}

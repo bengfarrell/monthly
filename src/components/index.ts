@@ -7,6 +7,8 @@ import { MonthlyFeed } from "./feed.js";
 import { MonthlyPostsEditor } from "./posts-editor.js";
 
 export { MonthlyMedia, MonthlyLibrary, MonthlyUpload, MonthlyAsset, MonthlyPost, MonthlyFeed, MonthlyPostsEditor };
+export { PostViewer } from "./post-viewer.js";
+export type { PostViewerOptions, OpenPostOptions } from "./post-viewer.js";
 
 export function defineMonthlyElements(registry = globalThis.customElements) {
   if (!registry) return;

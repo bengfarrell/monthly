@@ -19,7 +19,7 @@ test("package exports provide JavaScript modules and strict consumer declaration
   try {
     const filename = join(directory, "consumer.ts");
     writeFileSync(filename, `
-      import { MediaController, PostFeed, PostComposer, PostsEditor, Store, type Post, type MediaItem, type ControllerState } from "@bengfarrell/monthly/core";
+      import { MediaController, PostFeed, PostComposer, PostsEditor, Store, postUrl, type Post, type MediaItem, type ControllerState } from "@bengfarrell/monthly/core";
       import type { MonthlyMedia } from "@bengfarrell/monthly/components";
       import type { MediaUploaderOptions } from "@bengfarrell/monthly";
       const controller = new MediaController({ apiUrl: "https://api.example.com", bucket: "example-bucket" });
@@ -31,6 +31,19 @@ test("package exports provide JavaScript modules and strict consumer declaration
       const feed = new PostFeed({ baseUrl: "https://cdn.example.com/media/" });
       feed.subscribe(state => state.posts.map((post: Post) => post.text));
       document.createElement("monthly-feed").model = feed;
+      const publicFeed = document.createElement("monthly-feed");
+      publicFeed.postViewer = true;
+      publicFeed.postPrefix = "note-";
+      publicFeed.postLabel = "Memo";
+      async function openLinkedPost(id: string, month: string, signal: AbortSignal) {
+        const post = await feed.loadPost(id, month, signal);
+        if (post) {
+          const url: URL = postUrl(post, "https://example.com/memos/", "note-");
+          publicFeed.openPost(post, publicFeed, 0);
+        }
+      }
+      // @ts-expect-error Viewer enablement must be a boolean.
+      publicFeed.postViewer = "yes";
       document.createElement("monthly-post").model = new PostComposer(controller.api);
       document.createElement("monthly-posts-editor").model = new PostsEditor(controller.api, { month: "2026-11" });
       document.createElement("monthly-library").editor = controller.postsEditor;
