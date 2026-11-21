@@ -104,7 +104,7 @@ export class MonthlyFeed extends LitElement {
     }
     this.postStatus = "";
     this.viewer?.open(post, {
-      url: this.link(post), opener: opener ?? article?.querySelector<HTMLElement>(".monthly-post-open") ?? this,
+      opener: opener ?? article?.querySelector<HTMLElement>(".monthly-post-open") ?? this,
       previews, selectedIndex,
     });
   }
@@ -234,7 +234,6 @@ export class MonthlyFeed extends LitElement {
         <header class="monthly-post-viewer-heading">
           <h2 data-post-viewer-title>${this.postLabel}</h2>
           <div class="monthly-post-viewer-actions">
-            <a data-post-viewer-permalink>Link to ${label}</a>
             <form method="dialog"><button type="submit" autofocus aria-label=${`Close ${label} viewer`}>Close &times;</button></form>
           </div>
         </header>

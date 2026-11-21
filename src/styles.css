@@ -200,7 +200,7 @@ monthly-feed { container-type: inline-size; }
 @media (max-width: 899px) { .monthly-post-viewer-content { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 639px) {
   .monthly-post-viewer-heading { align-items: flex-start; flex-direction: column; }
-  .monthly-post-viewer-actions { width: 100%; justify-content: space-between; }
+  .monthly-post-viewer-actions { width: 100%; justify-content: flex-end; }
   .monthly-post-expand { min-height: 2.75rem; }
 }
 @container (min-width: 46rem) {

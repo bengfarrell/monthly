@@ -3,7 +3,6 @@ import type { Post } from "../shared/posts.js";
 
 export interface PostViewerOptions { label?: string; onClose?: () => void }
 export interface OpenPostOptions {
-  url: URL;
   opener?: HTMLElement;
   previews?: ReadonlyMap<string, HTMLMediaElement>;
   selectedIndex?: number;
@@ -13,7 +12,6 @@ interface Player { asset: HTMLMediaElement; preview?: HTMLMediaElement }
 export class PostViewer {
   readonly content: HTMLDivElement;
   readonly title: HTMLHeadingElement;
-  readonly permalink: HTMLAnchorElement;
   readonly error: HTMLParagraphElement;
   readonly events = new AbortController();
   readonly label: string;
@@ -30,7 +28,6 @@ export class PostViewer {
     this.onClose = onClose;
     this.content = dialog.querySelector<HTMLDivElement>("[data-post-viewer-content]")!;
     this.title = dialog.querySelector<HTMLHeadingElement>("[data-post-viewer-title]")!;
-    this.permalink = dialog.querySelector<HTMLAnchorElement>("[data-post-viewer-permalink]")!;
     this.error = dialog.querySelector<HTMLParagraphElement>("[data-post-viewer-error]")!;
     dialog.addEventListener("close", () => {
       if (!dialog.open && this.post && !this.closing) {
@@ -46,14 +43,13 @@ export class PostViewer {
     }, { signal: this.events.signal });
   }
 
-  open(post: Post, { url, opener, previews, selectedIndex = 0 }: OpenPostOptions) {
+  open(post: Post, { opener, previews, selectedIndex = 0 }: OpenPostOptions = {}) {
     this.reset();
     this.post = post;
     this.opener = opener;
     this.title.textContent = `${this.label} \u00b7 ${new Date(post.created).toLocaleDateString(undefined, {
       month: "long", day: "numeric", year: "numeric", timeZone: "UTC",
     })}`;
-    this.permalink.href = url.href;
     this.error.hidden = true;
     const copy = document.createElement("div");
     copy.className = "monthly-post-viewer-copy";

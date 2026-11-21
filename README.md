@@ -315,7 +315,9 @@ players, and restores focus without automatically resuming playback.
 The grid still loads only its normal current three-month window. Older direct
 links fetch **only the linked month's JSON separately**, without replacing or
 extending the grid. Opening from the grid sets a shareable URL. Back closes the
-viewer and Forward reopens it; Close, Escape and backdrop dismissal return to
+viewer; sharing uses the browser's address bar, with no separate permalink
+control in the viewer header. Forward reopens the
+viewer; Close, Escape and backdrop dismissal return to
 the current grid. Closing a direct link removes the month and post fragment
 without navigating away. Invalid, missing or failed links show explicit status
 messages. Disabling the viewer or disconnecting the element cleans up players,

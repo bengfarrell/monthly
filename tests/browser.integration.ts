@@ -118,6 +118,8 @@ test("opt-in post viewer supports historical links, current grids, media, histor
     assert.equal(await page.evaluate(() => "injected" in window), false);
     assert.deepEqual(await page.locator(".monthly-post-viewer-tags li").allTextContents(), ["#memo", "#photo"]);
     assert.equal(await page.locator(".monthly-post-viewer-media figure").count(), 3);
+    assert.equal(await page.locator(".monthly-post-viewer-heading a").count(), 0);
+    assert.equal(await page.locator(".monthly-post-viewer-media figcaption a").count(), 3);
     assert.equal(await page.locator(".monthly-post-viewer-media img").getAttribute("src"), old.media[0].url);
     assert.equal(await page.locator(".monthly-post-viewer-media video").getAttribute("poster"), old.media[1].thumbnails?.["960x540"].url);
     assert.equal(requests.includes(old.media[1].url), false);
